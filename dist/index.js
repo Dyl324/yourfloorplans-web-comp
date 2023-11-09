@@ -7242,6 +7242,4 @@ customElements.define('floorplan-list', FloorplanList);
 // export function initFloorplans(tagName = 'floorplan-list') {
 //   customElements.define(tagName, FloorplanList)
 // }
-
-export { FloorplanList };
 //# sourceMappingURL=index.js.map

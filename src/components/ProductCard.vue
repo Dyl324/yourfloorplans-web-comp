@@ -61,11 +61,11 @@ const dialog = ref(false)
     </div>
     <div
       v-if="dialog"
-      class="absolute w-full bg-black bg-opacity-30 h-screen top-0 left-0 flex justify-center px-8"
+      class="absolute w-full bg-black bg-opacity-30 h-screen top-0 left-0 flex justify-center px-8 z-40"
       @click="dialog = false"
     >
       <div
-        class="bg-white self-start mt-32 max-w-screen-md rounded-xl overflow-x-hidden overflow-y-auto"
+        class="bg-white self-start mt-32 max-w-screen-md rounded-xl overflow-x-hidden overflow-y-auto z-50"
         style="max-height: 60vh"
         @click.stop
       >

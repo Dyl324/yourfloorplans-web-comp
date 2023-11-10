@@ -1,5 +1,7 @@
 <script setup lang="ts">
 // import '../index.css'
+// import { ref } from 'vue'
+import ProductCard from './ProductCard.vue'
 const props = defineProps<{
   test: string
 }>()
@@ -40,6 +42,8 @@ const items = [
     size: '10.0'
   }
 ]
+
+// const dialog = ref(false)
 </script>
 
 <template>
@@ -47,24 +51,7 @@ const items = [
     <div
       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 m-4 justify-items-center"
     >
-      <div
-        v-for="item in items"
-        :key="item.title"
-        class="max-w-sm bg-white rounded-xl shadow w-full"
-      >
-        <img class="rounded-xl shadow" :src="`/src/assets/img/${item.img}`" alt="" />
-        <div class="p-2">
-          <div>
-            {{ item.title }}
-          </div>
-          <div>
-            {{ item.bathrooms }}
-            {{ item.bedrooms }}
-            {{ item.garage }}
-            {{ item.size }}
-          </div>
-        </div>
-      </div>
+      <ProductCard v-for="item in items" :key="item.title" :item="item" />
     </div>
   </div>
 </template>

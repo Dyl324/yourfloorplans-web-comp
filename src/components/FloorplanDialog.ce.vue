@@ -71,8 +71,6 @@ const informalUrl = `${import.meta.env.VITE_AWS_URL}${props.item.informalImage}`
 </template>
 
 <style>
-@import '@mdi/font/css/materialdesignicons.min.css';
-@import url('../index.css');
 i {
   font-size: 1.5rem;
 }

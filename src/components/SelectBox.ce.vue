@@ -73,8 +73,3 @@ watch(selected, (value) => {
     </Listbox>
   </div>
 </template>
-
-<style>
-@import '@mdi/font/css/materialdesignicons.min.css';
-@import url('../index.css');
-</style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import FloorplanDialog from './FloorplanDialog.vue'
+import FloorplanDialog from './FloorplanDialog.ce.vue'
 
 const props = defineProps<{
   item: Floorplan
@@ -35,8 +35,3 @@ const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
     <FloorplanDialog :dialog="dialog" :close="() => (dialog = false)" :item="item" />
   </div>
 </template>
-
-<style>
-@import '@mdi/font/css/materialdesignicons.min.css';
-@import url('../index.css');
-</style>

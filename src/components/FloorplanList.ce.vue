@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import '@mdi/font/css/materialdesignicons.min.css'
 import { ref, watch } from 'vue'
-import FloorplanCard from './FloorplanCard.vue'
+import FloorplanCard from './FloorplanCard.ce.vue'
 import { useFloorplans } from '../hooks/useFloorplans'
 import { useFloorplanTypes } from '../hooks/useFloorplanTypes'
-import SelectBox from './SelectBox.vue'
+import SelectBox from './SelectBox.ce.vue'
 
 const props = defineProps<{
   test: string
@@ -94,7 +95,6 @@ const [floorplanTypes] = useFloorplanTypes()
 </template>
 
 <style lang="scss">
-@import '@mdi/font/css/materialdesignicons.min.css';
 @import url('../index.css');
 .main {
   transition:

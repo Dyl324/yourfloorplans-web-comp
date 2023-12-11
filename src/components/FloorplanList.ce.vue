@@ -94,6 +94,7 @@ const [floorplanTypes] = useFloorplanTypes()
 </template>
 
 <style lang="scss">
+@import '@mdi/font/css/materialdesignicons.min.css';
 @import url('../index.css');
 .main {
   transition:

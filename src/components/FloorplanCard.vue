@@ -35,3 +35,8 @@ const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
     <FloorplanDialog :dialog="dialog" :close="() => (dialog = false)" :item="item" />
   </div>
 </template>
+
+<style>
+@import '@mdi/font/css/materialdesignicons.min.css';
+@import url('../index.css');
+</style>

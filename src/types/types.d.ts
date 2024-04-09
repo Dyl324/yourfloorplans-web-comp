@@ -4,6 +4,12 @@ declare type Floorplan = {
   size: number
   width: number
   length: number
+  area: number
+  garageArea: number
+  porchArea: number
+  alfrescoArea: number
+  groundFloorArea: number
+  firstFloorArea: number
   bathrooms: number
   bedrooms: number
   garages: number

@@ -8,7 +8,15 @@ interface RequestBody {
   floorplanTypeId?: number
   bedrooms?: number
   bathrooms?: number
+  garages?: number
   orderBy?: { orderBy: string; direction: string }
+  minSize?: number
+  maxSize?: number
+  minWidth?: number
+  maxWidth?: number
+  minLength?: number
+  maxLength?: number
+  masterPosRear?: boolean
 }
 
 interface ResponseData {
@@ -24,7 +32,15 @@ const refreshFloorplans = async (payload: Ref<RequestBody>) => {
       floorplanTypeId: payload.value.floorplanTypeId,
       bedrooms: payload.value.bedrooms,
       bathrooms: payload.value.bathrooms,
-      orderBy: payload.value.orderBy
+      garages: payload.value.garages,
+      orderBy: payload.value.orderBy,
+      minSize: payload.value.minSize,
+      maxSize: payload.value.maxSize,
+      minWidth: payload.value.minWidth,
+      maxWidth: payload.value.maxWidth,
+      minLength: payload.value.minLength,
+      maxLength: payload.value.maxLength,
+      masterPosRear: payload.value.masterPosRear
     }
 
     const result = await fetch(`${import.meta.env.VITE_BASE_URL}api/floorplans/public`, {

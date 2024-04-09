@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex items-center justify-around font-bold">
+  <div class="flex items-center justify-around font-bold text-black">
     <div class="flex items-center text-xl">
       <SvgIcon
         title="bed-queen-outline"

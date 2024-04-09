@@ -100,7 +100,7 @@ const details = [
 
                   <div class="grid sm:grid-cols-1 md:grid-cols-2 p-5">
                     <div
-                      class="border-b border-gray-200 flex justify-between p-3"
+                      class="border-b border-gray-200 flex justify-between p-3 text-black"
                       v-for="detail in details"
                       :key="detail.label"
                     >

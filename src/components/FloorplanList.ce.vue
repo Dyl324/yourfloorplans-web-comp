@@ -8,9 +8,22 @@ import TextField from './inputs/TextField.vue'
 import CheckBox from './inputs/CheckBox.vue'
 import LoadingSpinner from './misc/LoadingSpinner.vue'
 
-const props = defineProps<{
-  test: string
-}>()
+export interface Props {
+  test?: string
+  rounded?: string
+  expandedDefault?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  test: 'Default test value',
+  rounded: 'rounded-md',
+  expandedDefault: false
+})
+
+// const props = defineProps<{
+//   test: string
+//   rounded?: string
+// }>()
 
 console.log(props)
 
@@ -109,53 +122,77 @@ const onClickBack = () => {
 
 const [floorplans] = useFloorplans(floorplanProps)
 const [floorplanTypes] = useFloorplanTypes()
+
+const expanded = ref(props.expandedDefault)
 </script>
 
 <template>
   <div class="main container mx-auto mt-5">
-    <div v-if="floorplanTypes.type === 'SUCCESS'" class="mx-4">
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <SelectField
-          label="Type"
-          :items="floorplanTypes.data"
-          @onChanged="(value: FloorplanType) => (type = value)"
-        />
-        <TextField type="number" label="Bedrooms" v-model="bedrooms" />
-        <TextField type="number" label="Bathrooms" v-model="bathrooms" />
-        <TextField type="number" label="Garages" v-model="garages" />
-        <SelectField
-          label="Sort by"
-          :items="orderByOptions"
-          @onChanged="(value: OrderBy) => (orderBy = value)"
-        />
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4">
-        <div>
-          {{ 'House size(m\u00B2)' }}
-          <div class="grid grid-cols-2 gap-2 mt-3">
-            <TextField type="number" label="Min" v-model="minSize" />
-            <TextField type="number" label="Max" v-model="maxSize" />
-          </div>
+    <div class="relative mb-3 mx-4">
+      <h6 class="mb-0">
+        <div
+          class="relative flex items-center bg-white shadow-md w-full cursor-pointer hover:brightness-95 p-4 font-semibold text-left transition-all ease-in border-b border-solid border-slate-100 text-black group text-dark-500"
+          :class="rounded"
+          @click="expanded = !expanded"
+        >
+          <span>Filters</span>
+          <i
+            class="absolute right-0 pt-1 text-base transition-transform fa fa-chevron-down group-open:rotate-180"
+          ></i>
         </div>
-        <div>
-          {{ 'House width(m\u00B2)' }}
-          <div class="grid grid-cols-2 gap-2 mt-3">
-            <TextField type="number" label="Min" v-model="minWidth" />
-            <TextField type="number" label="Max" v-model="maxWidth" />
+      </h6>
+      <div
+        v-show="expanded"
+        class="shadow-md py-5 bg-gray-200 transition-all duration-300 ease-in-out"
+        :class="rounded"
+      >
+        <div v-if="floorplanTypes.type === 'SUCCESS'" class="mx-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <SelectField
+              label="Type"
+              :items="floorplanTypes.data"
+              @onChanged="(value: FloorplanType) => (type = value)"
+              :rounded="rounded"
+            />
+            <TextField type="number" label="Bedrooms" v-model="bedrooms" :rounded="rounded" />
+            <TextField type="number" label="Bathrooms" v-model="bathrooms" :rounded="rounded" />
+            <TextField type="number" label="Garages" v-model="garages" :rounded="rounded" />
+            <SelectField
+              label="Sort by"
+              :items="orderByOptions"
+              @onChanged="(value: OrderBy) => (orderBy = value)"
+              :rounded="rounded"
+            />
           </div>
-        </div>
-        <div>
-          {{ 'House length(m\u00B2)' }}
-          <div class="grid grid-cols-2 gap-2 mt-3">
-            <TextField type="number" label="Min" v-model="minLength" />
-            <TextField type="number" label="Max" v-model="maxLength" />
-          </div>
-        </div>
-        <div>
-          Master Suite Location
-          <div class="flex gap-4 mt-3">
-            <CheckBox label="Front" v-model="front" :onClick="onClickFront" />
-            <CheckBox label="Back" v-model="back" :onClick="onClickBack" />
+          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4">
+            <div>
+              {{ 'House size(m\u00B2)' }}
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <TextField type="number" label="Min" v-model="minSize" :rounded="rounded" />
+                <TextField type="number" label="Max" v-model="maxSize" :rounded="rounded" />
+              </div>
+            </div>
+            <div>
+              {{ 'House width(m\u00B2)' }}
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <TextField type="number" label="Min" v-model="minWidth" :rounded="rounded" />
+                <TextField type="number" label="Max" v-model="maxWidth" :rounded="rounded" />
+              </div>
+            </div>
+            <div>
+              {{ 'House length(m\u00B2)' }}
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <TextField type="number" label="Min" v-model="minLength" :rounded="rounded" />
+                <TextField type="number" label="Max" v-model="maxLength" :rounded="rounded" />
+              </div>
+            </div>
+            <div>
+              Master Suite Location
+              <div class="flex gap-4 mt-3">
+                <CheckBox label="Front" v-model="front" :onClick="onClickFront" />
+                <CheckBox label="Back" v-model="back" :onClick="onClickBack" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -171,7 +208,12 @@ const [floorplanTypes] = useFloorplanTypes()
       v-else-if="floorplans.type === 'SUCCESS'"
       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 m-4 justify-items-center"
     >
-      <FloorplanCard v-for="item in floorplans.data" :key="item.name" :item="item" />
+      <FloorplanCard
+        v-for="item in floorplans.data"
+        :key="item.name"
+        :item="item"
+        :rounded="rounded"
+      />
     </div>
     <div v-else-if="floorplans.type === 'ERROR'">{{ floorplans.error.message }}</div>
     <div v-else>No floorplans found</div>

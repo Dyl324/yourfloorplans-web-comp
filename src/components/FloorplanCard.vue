@@ -5,6 +5,7 @@ import FloorplanDialog from './FloorplanDialog.vue'
 
 const props = defineProps<{
   item: Floorplan
+  rounded: string
 }>()
 
 const dialog = ref(false)
@@ -15,12 +16,13 @@ const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
 <template>
   <div>
     <div
-      class="max-w-sm bg-white rounded-3xl shadow-md w-full cursor-pointer hover:brightness-95 transition-all duration-200"
+      class="max-w-sm bg-white shadow-md w-full cursor-pointer hover:brightness-95 transition-all duration-200"
+      :class="rounded"
       @click="dialog = true"
     >
-      <img class="rounded-3xl" :src="displayUrl" alt="" />
+      <img :class="rounded" :src="displayUrl" alt="" />
       <div class="p-2">
-        <div class="font-medium text-lg">
+        <div class="font-medium text-lg text-black">
           {{ item.name }}
         </div>
         <FloorplanCardIconRow

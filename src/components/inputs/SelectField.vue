@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   label: string
   items: { id: number; name: string }[]
+  rounded: string
 }>()
+
+watch(
+  () => props.rounded,
+  () => console.log('rounded changed', props.rounded)
+)
 
 const emit = defineEmits(['onChanged'])
 
@@ -33,7 +39,8 @@ const handleFocusOut = (event) => {
     <button
       @click="open = !open"
       type="button"
-      class="relative w-full cursor-pointer rounded-3xl bg-white py-2 pl-5 pr-10 text-left text-gray-900 ring-1 ring-inset ring-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 hover:ring-gray-500 sm:text-sm sm:leading-6 transition-all"
+      class="relative w-full cursor-pointer bg-white py-2 pl-5 pr-10 text-left text-gray-900 ring-1 ring-inset ring-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 hover:ring-gray-500 sm:text-sm sm:leading-6 transition-all"
+      :class="rounded"
       aria-haspopup="listbox"
       aria-expanded="true"
       aria-labelledby="listbox-label"

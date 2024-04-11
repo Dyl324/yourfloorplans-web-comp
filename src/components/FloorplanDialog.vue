@@ -6,6 +6,7 @@ const props = defineProps<{
   item: Floorplan
   dialog: boolean
   close: () => void
+  rounded: string
 }>()
 
 const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
@@ -61,7 +62,7 @@ const details = [
 <template>
   <div>
     <transition name="fade">
-      <div v-if="dialog" class="relative z-10" @click="close">
+      <div v-if="dialog" class="relative" style="z-index: 9999" @click="close">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
@@ -71,11 +72,13 @@ const details = [
             <transition name="slide">
               <div
                 v-if="dialog"
-                class="relative transform overflow-auto rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl"
+                class="relative transform overflow-auto bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl"
+                :class="rounded"
               >
-                <div class="bg-white rounded-3xl" style="max-height: 92vh" @click.stop>
+                <div class="bg-white" :class="rounded" style="max-height: 92vh" @click.stop>
                   <img
-                    class="rounded-3xl shadow object-cover w-full h-96"
+                    class="shadow object-cover w-full h-96"
+                    :class="rounded"
                     :src="displayUrl"
                     alt=""
                   />

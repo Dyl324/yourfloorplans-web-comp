@@ -6,6 +6,9 @@ import FloorplanDialog from './FloorplanDialog.vue'
 const props = defineProps<{
   item: Floorplan
   rounded: string
+  shadow: string
+  cardColor?: string
+  transparent: boolean
 }>()
 
 const dialog = ref(false)
@@ -16,8 +19,9 @@ const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
 <template>
   <div>
     <div
-      class="max-w-sm bg-white shadow-md w-full cursor-pointer hover:brightness-95 transition-all duration-200"
-      :class="rounded"
+      class="max-w-sm w-full cursor-pointer hover:brightness-95 transition-all duration-200"
+      :class="`${rounded} ${shadow} ${!cardColor && !transparent ? 'bg-white' : ''} ${transparent ? 'bg-transparent' : ''}`"
+      :style="cardColor && !transparent ? `background-color: ${cardColor}` : ''"
       @click="dialog = true"
     >
       <img :class="rounded" :src="displayUrl" alt="" />
@@ -35,7 +39,12 @@ const displayUrl = `${import.meta.env.VITE_AWS_URL}${props.item.displayImage}`
       </div>
     </div>
 
-    <FloorplanDialog :item="item" :dialog="dialog" :close="() => (dialog = false)" />
+    <FloorplanDialog
+      :item="item"
+      :dialog="dialog"
+      :close="() => (dialog = false)"
+      :rounded="rounded"
+    />
   </div>
 </template>
 

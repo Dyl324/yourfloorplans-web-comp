@@ -3197,6 +3197,53 @@ function renderList(source, renderItem, cache, index) {
   }
   return ret;
 }
+function renderSlot(slots, name, props = {}, fallback, noSlotted) {
+  if (currentRenderingInstance.isCE || currentRenderingInstance.parent && isAsyncWrapper(currentRenderingInstance.parent) && currentRenderingInstance.parent.isCE) {
+    if (name !== "default")
+      props.name = name;
+    return createVNode("slot", props, fallback && fallback());
+  }
+  let slot = slots[name];
+  if (!!(define_process_env_default$2.NODE_ENV !== "production") && slot && slot.length > 1) {
+    warn$1(
+      `SSR-optimized slot function detected in a non-SSR-optimized render function. You need to mark this component with $dynamic-slots in the parent template.`
+    );
+    slot = () => [];
+  }
+  if (slot && slot._c) {
+    slot._d = false;
+  }
+  openBlock();
+  const validSlotContent = slot && ensureValidVNode(slot(props));
+  const rendered = createBlock(
+    Fragment,
+    {
+      key: props.key || // slot content array of a dynamic conditional slot may have a branch
+      // key attached in the `createSlots` helper, respect that
+      validSlotContent && validSlotContent.key || `_${name}`
+    },
+    validSlotContent || (fallback ? fallback() : []),
+    validSlotContent && slots._ === 1 ? 64 : -2
+  );
+  if (!noSlotted && rendered.scopeId) {
+    rendered.slotScopeIds = [rendered.scopeId + "-s"];
+  }
+  if (slot && slot._c) {
+    slot._d = true;
+  }
+  return rendered;
+}
+function ensureValidVNode(vnodes) {
+  return vnodes.some((child) => {
+    if (!isVNode(child))
+      return true;
+    if (child.type === Comment)
+      return false;
+    if (child.type === Fragment && !ensureValidVNode(child.children))
+      return false;
+    return true;
+  }) ? vnodes : null;
+}
 const getPublicInstance = (i) => {
   if (!i)
     return null;
@@ -7642,48 +7689,6 @@ function patchClass(el, value, isSVG) {
 }
 const vShowOriginalDisplay = Symbol("_vod");
 const vShowHidden = Symbol("_vsh");
-const vShow = {
-  beforeMount(el, { value }, { transition }) {
-    el[vShowOriginalDisplay] = el.style.display === "none" ? "" : el.style.display;
-    if (transition && value) {
-      transition.beforeEnter(el);
-    } else {
-      setDisplay(el, value);
-    }
-  },
-  mounted(el, { value }, { transition }) {
-    if (transition && value) {
-      transition.enter(el);
-    }
-  },
-  updated(el, { value, oldValue }, { transition }) {
-    if (!value === !oldValue)
-      return;
-    if (transition) {
-      if (value) {
-        transition.beforeEnter(el);
-        setDisplay(el, true);
-        transition.enter(el);
-      } else {
-        transition.leave(el, () => {
-          setDisplay(el, false);
-        });
-      }
-    } else {
-      setDisplay(el, value);
-    }
-  },
-  beforeUnmount(el, { value }) {
-    setDisplay(el, value);
-  }
-};
-if (!!(define_process_env_default$1.NODE_ENV !== "production")) {
-  vShow.name = "show";
-}
-function setDisplay(el, value) {
-  el.style.display = value ? el[vShowOriginalDisplay] : "none";
-  el[vShowHidden] = !value;
-}
 const CSS_VAR_TEXT = Symbol(!!(define_process_env_default$1.NODE_ENV !== "production") ? "CSS_VAR_TEXT" : "");
 const displayRE = /(^|;)\s*display\s*:/;
 function patchStyle(el, prev, next) {
@@ -8487,9 +8492,9 @@ if (!!(define_process_env_default.NODE_ENV !== "production")) {
   initDev();
 }
 
-const _hoisted_1$b = ["height", "width"];
-const _hoisted_2$9 = ["d"];
-const _sfc_main$b = /* @__PURE__ */ defineComponent({
+const _hoisted_1$c = ["height", "width"];
+const _hoisted_2$a = ["d"];
+const _sfc_main$c = /* @__PURE__ */ defineComponent({
   __name: "SvgIcon",
   props: {
     path: {},
@@ -8506,14 +8511,14 @@ const _sfc_main$b = /* @__PURE__ */ defineComponent({
         width: _ctx.height ? _ctx.height : 20
       }, [
         createBaseVNode("title", null, toDisplayString(_ctx.title), 1),
-        createBaseVNode("path", { d: _ctx.path }, null, 8, _hoisted_2$9)
-      ], 8, _hoisted_1$b);
+        createBaseVNode("path", { d: _ctx.path }, null, 8, _hoisted_2$a)
+      ], 8, _hoisted_1$c);
     };
   }
 });
 
-const _hoisted_1$a = { class: "flex items-center text-black" };
-const _sfc_main$a = /* @__PURE__ */ defineComponent({
+const _hoisted_1$b = { class: "flex items-center text-black" };
+const _sfc_main$b = /* @__PURE__ */ defineComponent({
   __name: "FloorplanCardIconRow",
   props: {
     bedrooms: {},
@@ -8523,26 +8528,26 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
   },
   setup(__props) {
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$a, [
-        createVNode(_sfc_main$b, {
+      return openBlock(), createElementBlock("div", _hoisted_1$b, [
+        createVNode(_sfc_main$c, {
           title: "bed-queen-outline",
           path: "M19 10V7A2 2 0 0 0 17 5H7A2 2 0 0 0 5 7V10A2 2 0 0 0 3 12V17H4.33L5 19H6L6.67 17H17.33L18 19H19L19.67 17H21V12A2 2 0 0 0 19 10M7 7H17V10H7M19 15H5V12H19Z",
           class: "mr-1"
         }),
         createTextVNode(" " + toDisplayString(_ctx.bedrooms) + " ", 1),
-        createVNode(_sfc_main$b, {
+        createVNode(_sfc_main$c, {
           title: "shower",
           path: "M21,14V15C21,16.91 19.93,18.57 18.35,19.41L19,22H17L16.5,20C16.33,20 16.17,20 16,20H8C7.83,20 7.67,20 7.5,20L7,22H5L5.65,19.41C4.07,18.57 3,16.91 3,15V14H2V12H20V5A1,1 0 0,0 19,4C18.5,4 18.12,4.34 18,4.79C18.63,5.33 19,6.13 19,7H13A3,3 0 0,1 16,4C16.06,4 16.11,4 16.17,4C16.58,2.84 17.69,2 19,2A3,3 0 0,1 22,5V14H21V14M19,14H5V15A3,3 0 0,0 8,18H16A3,3 0 0,0 19,15V14Z",
           class: "mr-1 ml-3"
         }),
         createTextVNode(" " + toDisplayString(_ctx.bathrooms) + " ", 1),
-        createVNode(_sfc_main$b, {
+        createVNode(_sfc_main$c, {
           title: "car-outline",
           path: "M18.9 6C18.7 5.4 18.1 5 17.5 5H6.5C5.8 5 5.3 5.4 5.1 6L3 12V20C3 20.5 3.5 21 4 21H5C5.6 21 6 20.5 6 20V19H18V20C18 20.5 18.5 21 19 21H20C20.5 21 21 20.5 21 20V12L18.9 6M6.8 7H17.1L18.2 10H5.8L6.8 7M19 17H5V12H19V17M7.5 13C8.3 13 9 13.7 9 14.5S8.3 16 7.5 16 6 15.3 6 14.5 6.7 13 7.5 13M16.5 13C17.3 13 18 13.7 18 14.5S17.3 16 16.5 16C15.7 16 15 15.3 15 14.5S15.7 13 16.5 13Z",
           class: "mr-1 ml-3"
         }),
         createTextVNode(" " + toDisplayString(_ctx.garages) + " ", 1),
-        createVNode(_sfc_main$b, {
+        createVNode(_sfc_main$c, {
           title: "arrow-expand-horizontal",
           path: "M9,11H15V8L19,12L15,16V13H9V16L5,12L9,8V11M2,20V4H4V20H2M20,20V4H22V20H20Z",
           class: "mr-1 ml-3"
@@ -8553,12 +8558,12 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
   }
 });
 
-const _hoisted_1$9 = { class: "flex items-center justify-around font-bold text-black" };
-const _hoisted_2$8 = { class: "flex items-center text-xl" };
-const _hoisted_3$6 = { class: "flex items-center text-xl" };
-const _hoisted_4$5 = { class: "flex items-center text-xl" };
-const _hoisted_5$4 = { class: "flex items-center text-xl" };
-const _sfc_main$9 = /* @__PURE__ */ defineComponent({
+const _hoisted_1$a = { class: "flex items-center justify-around font-bold text-black" };
+const _hoisted_2$9 = { class: "flex items-center text-xl" };
+const _hoisted_3$7 = { class: "flex items-center text-xl" };
+const _hoisted_4$6 = { class: "flex items-center text-xl" };
+const _hoisted_5$5 = { class: "flex items-center text-xl" };
+const _sfc_main$a = /* @__PURE__ */ defineComponent({
   __name: "FloorplanDialogIconRow",
   props: {
     bedrooms: {},
@@ -8568,9 +8573,9 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
   },
   setup(__props) {
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$9, [
-        createBaseVNode("div", _hoisted_2$8, [
-          createVNode(_sfc_main$b, {
+      return openBlock(), createElementBlock("div", _hoisted_1$a, [
+        createBaseVNode("div", _hoisted_2$9, [
+          createVNode(_sfc_main$c, {
             title: "bed-queen-outline",
             path: "M19 10V7A2 2 0 0 0 17 5H7A2 2 0 0 0 5 7V10A2 2 0 0 0 3 12V17H4.33L5 19H6L6.67 17H17.33L18 19H19L19.67 17H21V12A2 2 0 0 0 19 10M7 7H17V10H7M19 15H5V12H19Z",
             class: "mr-1",
@@ -8579,8 +8584,8 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
           }),
           createTextVNode(" " + toDisplayString(_ctx.bedrooms), 1)
         ]),
-        createBaseVNode("div", _hoisted_3$6, [
-          createVNode(_sfc_main$b, {
+        createBaseVNode("div", _hoisted_3$7, [
+          createVNode(_sfc_main$c, {
             title: "shower",
             path: "M21,14V15C21,16.91 19.93,18.57 18.35,19.41L19,22H17L16.5,20C16.33,20 16.17,20 16,20H8C7.83,20 7.67,20 7.5,20L7,22H5L5.65,19.41C4.07,18.57 3,16.91 3,15V14H2V12H20V5A1,1 0 0,0 19,4C18.5,4 18.12,4.34 18,4.79C18.63,5.33 19,6.13 19,7H13A3,3 0 0,1 16,4C16.06,4 16.11,4 16.17,4C16.58,2.84 17.69,2 19,2A3,3 0 0,1 22,5V14H21V14M19,14H5V15A3,3 0 0,0 8,18H16A3,3 0 0,0 19,15V14Z",
             class: "mr-1 ml-3",
@@ -8589,8 +8594,8 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
           }),
           createTextVNode(" " + toDisplayString(_ctx.bathrooms), 1)
         ]),
-        createBaseVNode("div", _hoisted_4$5, [
-          createVNode(_sfc_main$b, {
+        createBaseVNode("div", _hoisted_4$6, [
+          createVNode(_sfc_main$c, {
             title: "car-outline",
             path: "M18.9 6C18.7 5.4 18.1 5 17.5 5H6.5C5.8 5 5.3 5.4 5.1 6L3 12V20C3 20.5 3.5 21 4 21H5C5.6 21 6 20.5 6 20V19H18V20C18 20.5 18.5 21 19 21H20C20.5 21 21 20.5 21 20V12L18.9 6M6.8 7H17.1L18.2 10H5.8L6.8 7M19 17H5V12H19V17M7.5 13C8.3 13 9 13.7 9 14.5S8.3 16 7.5 16 6 15.3 6 14.5 6.7 13 7.5 13M16.5 13C17.3 13 18 13.7 18 14.5S17.3 16 16.5 16C15.7 16 15 15.3 15 14.5S15.7 13 16.5 13Z",
             class: "mr-1 ml-3",
@@ -8599,8 +8604,8 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
           }),
           createTextVNode(" " + toDisplayString(_ctx.garages), 1)
         ]),
-        createBaseVNode("div", _hoisted_5$4, [
-          createVNode(_sfc_main$b, {
+        createBaseVNode("div", _hoisted_5$5, [
+          createVNode(_sfc_main$c, {
             title: "arrow-expand-horizontal",
             path: "M9,11H15V8L19,12L15,16V13H9V16L5,12L9,8V11M2,20V4H4V20H2M20,20V4H22V20H20Z",
             class: "mr-1 ml-3",
@@ -8614,11 +8619,11 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const _hoisted_1$8 = { class: "relative p-5" };
-const _hoisted_2$7 = ["src"];
-const _hoisted_3$5 = { class: "flex justify-center space-x-2" };
-const _hoisted_4$4 = ["onClick"];
-const _hoisted_5$3 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none transition-all" }, [
+const _hoisted_1$9 = { class: "relative p-5" };
+const _hoisted_2$8 = ["src"];
+const _hoisted_3$6 = { class: "flex justify-center space-x-2" };
+const _hoisted_4$5 = ["onClick"];
+const _hoisted_5$4 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:outline-none transition-all" }, [
   /* @__PURE__ */ createBaseVNode("svg", {
     class: "w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180",
     "aria-hidden": "true",
@@ -8636,10 +8641,10 @@ const _hoisted_5$3 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-fl
   ]),
   /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Previous")
 ], -1);
-const _hoisted_6$3 = [
-  _hoisted_5$3
+const _hoisted_6$4 = [
+  _hoisted_5$4
 ];
-const _hoisted_7$3 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none" }, [
+const _hoisted_7$4 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:outline-none" }, [
   /* @__PURE__ */ createBaseVNode("svg", {
     class: "w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180",
     "aria-hidden": "true",
@@ -8657,10 +8662,10 @@ const _hoisted_7$3 = /* @__PURE__ */ createBaseVNode("span", { class: "inline-fl
   ]),
   /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Next")
 ], -1);
-const _hoisted_8$3 = [
-  _hoisted_7$3
+const _hoisted_8$4 = [
+  _hoisted_7$4
 ];
-const _sfc_main$8 = /* @__PURE__ */ defineComponent({
+const _sfc_main$9 = /* @__PURE__ */ defineComponent({
   __name: "ImageCarousel",
   props: {
     images: {}
@@ -8675,36 +8680,36 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
       carouselIndex.value = (carouselIndex.value - 1 + props.images.length) % props.images.length;
     };
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$8, [
+      return openBlock(), createElementBlock("div", _hoisted_1$9, [
         createBaseVNode("img", {
           class: "object-fit w-full h-60 md:h-96 transition ease-in duration-200",
           src: _ctx.images[carouselIndex.value]
-        }, null, 8, _hoisted_2$7),
-        createBaseVNode("div", _hoisted_3$5, [
+        }, null, 8, _hoisted_2$8),
+        createBaseVNode("div", _hoisted_3$6, [
           (openBlock(true), createElementBlock(Fragment, null, renderList(_ctx.images, (image, index) => {
             return openBlock(), createElementBlock("span", {
               key: index,
               class: normalizeClass(["w-2 h-2 rounded-full bg-gray-400 cursor-pointer", { "bg-gray-800": index === carouselIndex.value }]),
               onClick: ($event) => carouselIndex.value = index
-            }, null, 10, _hoisted_4$4);
+            }, null, 10, _hoisted_4$5);
           }), 128))
         ]),
         createBaseVNode("button", {
           type: "button",
           class: "absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none",
           onClick: prevImage
-        }, _hoisted_6$3),
+        }, _hoisted_6$4),
         createBaseVNode("button", {
           type: "button",
           class: "absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none",
           onClick: nextImage
-        }, _hoisted_8$3)
+        }, _hoisted_8$4)
       ]);
     };
   }
 });
 
-const _hoisted_1$7 = /* @__PURE__ */ createBaseVNode("svg", {
+const _hoisted_1$8 = /* @__PURE__ */ createBaseVNode("svg", {
   xmlns: "http://www.w3.org/2000/svg",
   viewBox: "0 0 18 18",
   class: "w-4 h-4"
@@ -8712,12 +8717,12 @@ const _hoisted_1$7 = /* @__PURE__ */ createBaseVNode("svg", {
   /* @__PURE__ */ createBaseVNode("title", null, "close"),
   /* @__PURE__ */ createBaseVNode("path", { d: "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" })
 ], -1);
-const _hoisted_2$6 = /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Icon description", -1);
-const _hoisted_3$4 = [
-  _hoisted_1$7,
-  _hoisted_2$6
+const _hoisted_2$7 = /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Icon description", -1);
+const _hoisted_3$5 = [
+  _hoisted_1$8,
+  _hoisted_2$7
 ];
-const _sfc_main$7 = /* @__PURE__ */ defineComponent({
+const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   __name: "CloseButton",
   props: {
     close: { type: Function }
@@ -8729,32 +8734,29 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
         (...args) => _ctx.close && _ctx.close(...args)),
         type: "button",
         class: "font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center md:hidden"
-      }, _hoisted_3$4);
+      }, _hoisted_3$5);
     };
   }
 });
 
-const _withScopeId$1 = (n) => (pushScopeId("data-v-b5a4f81e"), n = n(), popScopeId(), n);
-const _hoisted_1$6 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("div", { class: "fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" }, null, -1));
-const _hoisted_2$5 = { class: "fixed inset-0 z-10 w-screen overflow-y-auto" };
-const _hoisted_3$3 = { class: "flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0" };
-const _hoisted_4$3 = {
-  key: 0,
-  class: "relative transform overflow-auto rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl"
-};
-const _hoisted_5$2 = { class: "p-4" };
-const _hoisted_6$2 = { class: "text-2xl font-semibold leading-6 text-gray-900 flex justify-between items-center" };
-const _hoisted_7$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("div", { class: "border-t border-gray-200 mx-5" }, null, -1));
-const _hoisted_8$2 = { class: "grid sm:grid-cols-1 md:grid-cols-2 p-5" };
-const _hoisted_9$1 = { key: 0 };
-const _hoisted_10$1 = { class: "font-bold" };
-const _hoisted_11$1 = { key: 0 };
-const _sfc_main$6 = /* @__PURE__ */ defineComponent({
+const _withScopeId$1 = (n) => (pushScopeId("data-v-7df31f71"), n = n(), popScopeId(), n);
+const _hoisted_1$7 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("div", { class: "fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" }, null, -1));
+const _hoisted_2$6 = { class: "fixed inset-0 z-10 w-screen overflow-y-auto" };
+const _hoisted_3$4 = { class: "flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0" };
+const _hoisted_4$4 = { class: "p-4" };
+const _hoisted_5$3 = { class: "text-2xl font-semibold leading-6 text-gray-900 flex justify-between items-center" };
+const _hoisted_6$3 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("div", { class: "border-t border-gray-200 mx-5" }, null, -1));
+const _hoisted_7$3 = { class: "grid sm:grid-cols-1 md:grid-cols-2 p-5" };
+const _hoisted_8$3 = { key: 0 };
+const _hoisted_9$2 = { class: "font-bold" };
+const _hoisted_10$1 = { key: 0 };
+const _sfc_main$7 = /* @__PURE__ */ defineComponent({
   __name: "FloorplanDialog",
   props: {
     item: {},
     dialog: { type: Boolean },
-    close: { type: Function }
+    close: { type: Function },
+    rounded: {}
   },
   setup(__props) {
     const props = __props;
@@ -8810,33 +8812,37 @@ const _sfc_main$6 = /* @__PURE__ */ defineComponent({
           default: withCtx(() => [
             _ctx.dialog ? (openBlock(), createElementBlock("div", {
               key: 0,
-              class: "relative z-10",
+              class: "relative",
+              style: { "z-index": "9999" },
               onClick: _cache[1] || (_cache[1] = //@ts-ignore
               (...args) => _ctx.close && _ctx.close(...args))
             }, [
-              _hoisted_1$6,
-              createBaseVNode("div", _hoisted_2$5, [
-                createBaseVNode("div", _hoisted_3$3, [
+              _hoisted_1$7,
+              createBaseVNode("div", _hoisted_2$6, [
+                createBaseVNode("div", _hoisted_3$4, [
                   createVNode(Transition, { name: "slide" }, {
                     default: withCtx(() => [
-                      _ctx.dialog ? (openBlock(), createElementBlock("div", _hoisted_4$3, [
+                      _ctx.dialog ? (openBlock(), createElementBlock("div", {
+                        key: 0,
+                        class: normalizeClass(["relative transform overflow-auto bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl", _ctx.rounded])
+                      }, [
                         createBaseVNode("div", {
-                          class: "bg-white rounded-3xl",
+                          class: normalizeClass(["bg-white", _ctx.rounded]),
                           style: { "max-height": "92vh" },
                           onClick: _cache[0] || (_cache[0] = withModifiers(() => {
                           }, ["stop"]))
                         }, [
                           createBaseVNode("img", {
-                            class: "rounded-3xl shadow object-cover w-full h-96",
+                            class: normalizeClass(["shadow object-cover w-full h-96", _ctx.rounded]),
                             src: displayUrl,
                             alt: ""
-                          }),
-                          createBaseVNode("div", _hoisted_5$2, [
-                            createBaseVNode("h3", _hoisted_6$2, [
+                          }, null, 2),
+                          createBaseVNode("div", _hoisted_4$4, [
+                            createBaseVNode("h3", _hoisted_5$3, [
                               createTextVNode(toDisplayString(_ctx.item.name) + " ", 1),
-                              createVNode(_sfc_main$7, { close: _ctx.close }, null, 8, ["close"])
+                              createVNode(_sfc_main$8, { close: _ctx.close }, null, 8, ["close"])
                             ]),
-                            createVNode(_sfc_main$9, {
+                            createVNode(_sfc_main$a, {
                               class: "mt-4",
                               bedrooms: _ctx.item.bedrooms,
                               bathrooms: _ctx.item.bathrooms,
@@ -8844,9 +8850,9 @@ const _sfc_main$6 = /* @__PURE__ */ defineComponent({
                               size: _ctx.item.size
                             }, null, 8, ["bedrooms", "bathrooms", "garages", "size"])
                           ]),
-                          _hoisted_7$2,
-                          createVNode(_sfc_main$8, { images }),
-                          createBaseVNode("div", _hoisted_8$2, [
+                          _hoisted_6$3,
+                          createVNode(_sfc_main$9, { images }),
+                          createBaseVNode("div", _hoisted_7$3, [
                             (openBlock(), createElementBlock(Fragment, null, renderList(details, (detail) => {
                               return createBaseVNode("div", {
                                 class: "border-b border-gray-200 flex justify-between p-3 text-black",
@@ -8854,17 +8860,17 @@ const _sfc_main$6 = /* @__PURE__ */ defineComponent({
                               }, [
                                 createBaseVNode("span", null, [
                                   createTextVNode(toDisplayString(detail.label), 1),
-                                  detail.label === "Home Area m" ? (openBlock(), createElementBlock("sup", _hoisted_9$1, "2")) : createCommentVNode("", true)
+                                  detail.label === "Home Area m" ? (openBlock(), createElementBlock("sup", _hoisted_8$3, "2")) : createCommentVNode("", true)
                                 ]),
-                                createBaseVNode("span", _hoisted_10$1, [
+                                createBaseVNode("span", _hoisted_9$2, [
                                   createTextVNode(toDisplayString(detail.value) + toDisplayString(detail.sqs ? "sqs" : "m"), 1),
-                                  !detail.meters && !detail.sqs ? (openBlock(), createElementBlock("sup", _hoisted_11$1, "2")) : createCommentVNode("", true)
+                                  !detail.meters && !detail.sqs ? (openBlock(), createElementBlock("sup", _hoisted_10$1, "2")) : createCommentVNode("", true)
                                 ])
                               ]);
                             }), 64))
                           ])
-                        ])
-                      ])) : createCommentVNode("", true)
+                        ], 2)
+                      ], 2)) : createCommentVNode("", true)
                     ]),
                     _: 1
                   })
@@ -8887,15 +8893,18 @@ const _export_sfc = (sfc, props) => {
   return target;
 };
 
-const FloorplanDialog = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-b5a4f81e"]]);
+const FloorplanDialog = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__scopeId", "data-v-7df31f71"]]);
 
-const _hoisted_1$5 = { class: "p-2" };
-const _hoisted_2$4 = { class: "font-medium text-lg text-black" };
-const _sfc_main$5 = /* @__PURE__ */ defineComponent({
+const _hoisted_1$6 = { class: "p-2" };
+const _hoisted_2$5 = { class: "font-medium text-lg text-black" };
+const _sfc_main$6 = /* @__PURE__ */ defineComponent({
   __name: "FloorplanCard",
   props: {
     item: {},
-    rounded: {}
+    rounded: {},
+    shadow: {},
+    cardColor: {},
+    transparent: { type: Boolean }
   },
   setup(__props) {
     const props = __props;
@@ -8904,7 +8913,8 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", null, [
         createBaseVNode("div", {
-          class: normalizeClass(["max-w-sm bg-white shadow-md w-full cursor-pointer hover:brightness-95 transition-all duration-200", _ctx.rounded]),
+          class: normalizeClass(["max-w-sm w-full cursor-pointer hover:brightness-95 transition-all duration-200", `${_ctx.rounded} ${_ctx.shadow} ${!_ctx.cardColor && !_ctx.transparent ? "bg-white" : ""} ${_ctx.transparent ? "bg-transparent" : ""}`]),
+          style: normalizeStyle(_ctx.cardColor && !_ctx.transparent ? `background-color: ${_ctx.cardColor}` : ""),
           onClick: _cache[0] || (_cache[0] = ($event) => dialog.value = true)
         }, [
           createBaseVNode("img", {
@@ -8912,9 +8922,9 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
             src: displayUrl,
             alt: ""
           }, null, 2),
-          createBaseVNode("div", _hoisted_1$5, [
-            createBaseVNode("div", _hoisted_2$4, toDisplayString(_ctx.item.name), 1),
-            createVNode(_sfc_main$a, {
+          createBaseVNode("div", _hoisted_1$6, [
+            createBaseVNode("div", _hoisted_2$5, toDisplayString(_ctx.item.name), 1),
+            createVNode(_sfc_main$b, {
               class: "mt-2",
               bedrooms: _ctx.item.bedrooms,
               bathrooms: _ctx.item.bathrooms,
@@ -8922,18 +8932,19 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
               size: _ctx.item.size
             }, null, 8, ["bedrooms", "bathrooms", "garages", "size"])
           ])
-        ], 2),
+        ], 6),
         createVNode(FloorplanDialog, {
           item: _ctx.item,
           dialog: dialog.value,
-          close: () => dialog.value = false
-        }, null, 8, ["item", "dialog", "close"])
+          close: () => dialog.value = false,
+          rounded: _ctx.rounded
+        }, null, 8, ["item", "dialog", "close", "rounded"])
       ]);
     };
   }
 });
 
-const FloorplanCard = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-7b9663c6"]]);
+const FloorplanCard = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-c37c054c"]]);
 
 const useLoadData = (onLoad) => {
   const state = ref({ type: "LOADING" });
@@ -8970,7 +8981,7 @@ const refreshFloorplans = async (payload) => {
       maxLength: payload.value.maxLength,
       masterPosRear: payload.value.masterPosRear
     };
-    const result = await fetch(`${"http://localhost:3000/"}api/floorplans/public`, {
+    const result = await fetch(`${"https://console.schematix.com.au/"}api/floorplans/public`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -8988,7 +8999,7 @@ const refreshFloorplans = async (payload) => {
 const useFloorplanTypes = () => useLoadData(refreshFloorplanTypes);
 const refreshFloorplanTypes = async () => {
   try {
-    const result = await fetch(`${"http://localhost:3000/"}api/floorplans/types/public`, {
+    const result = await fetch(`${"https://console.schematix.com.au/"}api/floorplans/types/public`, {
       method: "GET"
     });
     const data = await result.json();
@@ -8998,6 +9009,82 @@ const refreshFloorplanTypes = async () => {
     throw err;
   }
 };
+
+const _hoisted_1$5 = { class: "relative mb-3 mx-4" };
+const _hoisted_2$4 = { class: "mb-0" };
+const _hoisted_3$3 = /* @__PURE__ */ createBaseVNode("span", null, "Filters", -1);
+const _hoisted_4$3 = {
+  key: 0,
+  xmlns: "http://www.w3.org/2000/svg",
+  fill: "none",
+  viewBox: "0 0 24 24",
+  "stroke-width": "1.5",
+  stroke: "currentColor",
+  class: "w-6 h-6"
+};
+const _hoisted_5$2 = /* @__PURE__ */ createBaseVNode("path", {
+  "stroke-linecap": "round",
+  "stroke-linejoin": "round",
+  d: "m19.5 8.25-7.5 7.5-7.5-7.5"
+}, null, -1);
+const _hoisted_6$2 = [
+  _hoisted_5$2
+];
+const _hoisted_7$2 = {
+  key: 1,
+  xmlns: "http://www.w3.org/2000/svg",
+  fill: "none",
+  viewBox: "0 0 24 24",
+  "stroke-width": "1.5",
+  stroke: "currentColor",
+  class: "w-6 h-6"
+};
+const _hoisted_8$2 = /* @__PURE__ */ createBaseVNode("path", {
+  "stroke-linecap": "round",
+  "stroke-linejoin": "round",
+  d: "m4.5 15.75 7.5-7.5 7.5 7.5"
+}, null, -1);
+const _hoisted_9$1 = [
+  _hoisted_8$2
+];
+const _sfc_main$5 = /* @__PURE__ */ defineComponent({
+  __name: "FilterExpandable",
+  props: {
+    open: { type: Boolean },
+    toggle: { type: Function },
+    rounded: {},
+    shadow: {},
+    cardColor: {}
+  },
+  setup(__props) {
+    return (_ctx, _cache) => {
+      return openBlock(), createElementBlock("div", _hoisted_1$5, [
+        createBaseVNode("h6", _hoisted_2$4, [
+          createBaseVNode("div", {
+            class: normalizeClass(["relative px-4 flex items-center justify-between w-full cursor-pointer hover:brightness-95 font-semibold text-left transition-all ease-in text-black group text-dark-500", `${_ctx.rounded} ${_ctx.open ? "py-4" : "py-2"} ${_ctx.shadow} ${!_ctx.cardColor ? "bg-white" : ""}`]),
+            style: normalizeStyle(_ctx.cardColor ? `background-color: ${_ctx.cardColor}` : ""),
+            onClick: _cache[0] || (_cache[0] = //@ts-ignore
+            (...args) => _ctx.toggle && _ctx.toggle(...args))
+          }, [
+            _hoisted_3$3,
+            !_ctx.open ? (openBlock(), createElementBlock("svg", _hoisted_4$3, _hoisted_6$2)) : (openBlock(), createElementBlock("svg", _hoisted_7$2, _hoisted_9$1))
+          ], 6)
+        ]),
+        createVNode(Transition, { name: "fade" }, {
+          default: withCtx(() => [
+            _ctx.open ? (openBlock(), createElementBlock("div", {
+              key: 0,
+              class: normalizeClass(["py-5 bg-gray-200", `${_ctx.rounded} ${_ctx.shadow}`])
+            }, [
+              renderSlot(_ctx.$slots, "default")
+            ], 2)) : createCommentVNode("", true)
+          ]),
+          _: 3
+        })
+      ]);
+    };
+  }
+});
 
 const _withScopeId = (n) => (pushScopeId("data-v-63035954"), n = n(), popScopeId(), n);
 const _hoisted_1$4 = { class: "flex items-center" };
@@ -9227,46 +9314,62 @@ function _sfc_render(_ctx, _cache) {
 }
 const LoadingSpinner = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render]]);
 
-const _hoisted_1 = { class: "main container mx-auto mt-5" };
-const _hoisted_2 = { class: "relative mb-3 mx-4" };
-const _hoisted_3 = { class: "mb-0" };
-const _hoisted_4 = /* @__PURE__ */ createBaseVNode("span", null, "Filters", -1);
-const _hoisted_5 = /* @__PURE__ */ createBaseVNode("i", { class: "absolute right-0 pt-1 text-base transition-transform fa fa-chevron-down group-open:rotate-180" }, null, -1);
-const _hoisted_6 = [
-  _hoisted_4,
-  _hoisted_5
-];
-const _hoisted_7 = {
+const _hoisted_1 = { class: "main container mx-auto" };
+const _hoisted_2 = {
   key: 0,
   class: "mx-4"
 };
-const _hoisted_8 = { class: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" };
-const _hoisted_9 = { class: "grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4" };
-const _hoisted_10 = { class: "grid grid-cols-2 gap-2 mt-3" };
-const _hoisted_11 = { class: "grid grid-cols-2 gap-2 mt-3" };
-const _hoisted_12 = { class: "grid grid-cols-2 gap-2 mt-3" };
-const _hoisted_13 = { class: "flex gap-4 mt-3" };
-const _hoisted_14 = {
+const _hoisted_3 = { class: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" };
+const _hoisted_4 = { class: "grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4" };
+const _hoisted_5 = { class: "grid grid-cols-2 gap-2 mt-3" };
+const _hoisted_6 = { class: "grid grid-cols-2 gap-2 mt-3" };
+const _hoisted_7 = { class: "grid grid-cols-2 gap-2 mt-3" };
+const _hoisted_8 = { class: "flex gap-4 mt-3" };
+const _hoisted_9 = {
   key: 0,
   class: "flex items-center justify-center"
 };
-const _hoisted_15 = { role: "status" };
-const _hoisted_16 = /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Loading...", -1);
-const _hoisted_17 = {
+const _hoisted_10 = { role: "status" };
+const _hoisted_11 = /* @__PURE__ */ createBaseVNode("span", { class: "sr-only" }, "Loading...", -1);
+const _hoisted_12 = {
   key: 1,
   class: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 m-4 justify-items-center"
 };
-const _hoisted_18 = { key: 2 };
-const _hoisted_19 = { key: 3 };
+const _hoisted_13 = { key: 2 };
+const _hoisted_14 = { key: 3 };
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "FloorplanList.ce",
   props: {
-    test: { default: "Default test value", type: String },
-    rounded: { default: "rounded-md", type: String },
-    expandedDefault: { type: Boolean, default: false }
+    rounded: { default: "rounded", type: String },
+    primaryColor: { type: String },
+    cardColor: { type: String },
+    shadow: { default: "shadow", type: String },
+    variant: { type: String },
+    darkMode: { default: "false", type: String },
+    expandedDefault: { default: "false", type: String },
+    transparent: { default: "false", type: String }
   },
   setup(__props) {
     const props = __props;
+    const roundedOptions = [
+      "rounded-none",
+      "rounded-sm",
+      "rounded",
+      "rounded-md",
+      "rounded-lg",
+      "rounded-xl",
+      "rounded-2xl",
+      "rounded-3xl"
+    ];
+    const shadowOptions = ["shadow-none", "shadow", "shadow-md", "shadow-lg", "shadow-xl", "shadow-2xl"];
+    const selectedRounded = computed(() => {
+      const value = roundedOptions.find((option) => option === props.rounded);
+      return value || "rounded-md";
+    });
+    const selectedShadow = computed(() => {
+      const value = shadowOptions.find((option) => option === props.shadow);
+      return value || "shadow-md";
+    });
     console.log(props);
     const type = ref();
     const bedrooms = ref();
@@ -9316,7 +9419,6 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         masterPosRear
       ],
       () => {
-        console.log(masterPosRear.value);
         floorplanProps.value = {
           floorplanTypeId: type.value?.id,
           bedrooms: bedrooms.value || void 0,
@@ -9349,156 +9451,157 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
     const [floorplans] = useFloorplans(floorplanProps);
     const [floorplanTypes] = useFloorplanTypes();
-    const expanded = ref(props.expandedDefault);
+    const expanded = ref(props.expandedDefault === "true");
+    const transparentCard = props.transparent === "true";
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1, [
-        createBaseVNode("div", _hoisted_2, [
-          createBaseVNode("h6", _hoisted_3, [
-            createBaseVNode("div", {
-              class: normalizeClass(["relative flex items-center bg-white shadow-md w-full cursor-pointer hover:brightness-95 p-4 font-semibold text-left transition-all ease-in border-b border-solid border-slate-100 text-black group text-dark-500", _ctx.rounded]),
-              onClick: _cache[0] || (_cache[0] = ($event) => expanded.value = !expanded.value)
-            }, _hoisted_6, 2)
-          ]),
-          withDirectives(createBaseVNode("div", {
-            class: normalizeClass(["shadow-md py-5 bg-gray-200 transition-all duration-300 ease-in-out", _ctx.rounded])
-          }, [
-            unref(floorplanTypes).type === "SUCCESS" ? (openBlock(), createElementBlock("div", _hoisted_7, [
-              createBaseVNode("div", _hoisted_8, [
+        createVNode(_sfc_main$5, {
+          open: expanded.value,
+          toggle: () => expanded.value = !expanded.value,
+          rounded: selectedRounded.value,
+          shadow: selectedShadow.value,
+          cardColor: props.cardColor
+        }, {
+          default: withCtx(() => [
+            unref(floorplanTypes).type === "SUCCESS" ? (openBlock(), createElementBlock("div", _hoisted_2, [
+              createBaseVNode("div", _hoisted_3, [
                 createVNode(SelectField, {
                   label: "Type",
                   items: unref(floorplanTypes).data,
-                  onOnChanged: _cache[1] || (_cache[1] = (value) => type.value = value),
-                  rounded: _ctx.rounded
+                  onOnChanged: _cache[0] || (_cache[0] = (value) => type.value = value),
+                  rounded: selectedRounded.value
                 }, null, 8, ["items", "rounded"]),
                 createVNode(_sfc_main$3, {
                   type: "number",
                   label: "Bedrooms",
                   modelValue: bedrooms.value,
-                  "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => bedrooms.value = $event),
-                  rounded: _ctx.rounded
+                  "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => bedrooms.value = $event),
+                  rounded: selectedRounded.value
                 }, null, 8, ["modelValue", "rounded"]),
                 createVNode(_sfc_main$3, {
                   type: "number",
                   label: "Bathrooms",
                   modelValue: bathrooms.value,
-                  "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => bathrooms.value = $event),
-                  rounded: _ctx.rounded
+                  "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => bathrooms.value = $event),
+                  rounded: selectedRounded.value
                 }, null, 8, ["modelValue", "rounded"]),
                 createVNode(_sfc_main$3, {
                   type: "number",
                   label: "Garages",
                   modelValue: garages.value,
-                  "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => garages.value = $event),
-                  rounded: _ctx.rounded
+                  "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => garages.value = $event),
+                  rounded: selectedRounded.value
                 }, null, 8, ["modelValue", "rounded"]),
                 createVNode(SelectField, {
                   label: "Sort by",
                   items: orderByOptions,
-                  onOnChanged: _cache[5] || (_cache[5] = (value) => orderBy.value = value),
-                  rounded: _ctx.rounded
+                  onOnChanged: _cache[4] || (_cache[4] = (value) => orderBy.value = value),
+                  rounded: selectedRounded.value
                 }, null, 8, ["rounded"])
               ]),
-              createBaseVNode("div", _hoisted_9, [
+              createBaseVNode("div", _hoisted_4, [
                 createBaseVNode("div", null, [
                   createTextVNode(toDisplayString("House size(m²)") + " ", 1),
-                  createBaseVNode("div", _hoisted_10, [
+                  createBaseVNode("div", _hoisted_5, [
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Min",
                       modelValue: minSize.value,
-                      "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => minSize.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => minSize.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"]),
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Max",
                       modelValue: maxSize.value,
-                      "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => maxSize.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => maxSize.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"])
                   ])
                 ]),
                 createBaseVNode("div", null, [
                   createTextVNode(toDisplayString("House width(m²)") + " ", 1),
-                  createBaseVNode("div", _hoisted_11, [
+                  createBaseVNode("div", _hoisted_6, [
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Min",
                       modelValue: minWidth.value,
-                      "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => minWidth.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => minWidth.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"]),
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Max",
                       modelValue: maxWidth.value,
-                      "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => maxWidth.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => maxWidth.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"])
                   ])
                 ]),
                 createBaseVNode("div", null, [
                   createTextVNode(toDisplayString("House length(m²)") + " ", 1),
-                  createBaseVNode("div", _hoisted_12, [
+                  createBaseVNode("div", _hoisted_7, [
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Min",
                       modelValue: minLength.value,
-                      "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => minLength.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => minLength.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"]),
                     createVNode(_sfc_main$3, {
                       type: "number",
                       label: "Max",
                       modelValue: maxLength.value,
-                      "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => maxLength.value = $event),
-                      rounded: _ctx.rounded
+                      "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => maxLength.value = $event),
+                      rounded: selectedRounded.value
                     }, null, 8, ["modelValue", "rounded"])
                   ])
                 ]),
                 createBaseVNode("div", null, [
                   createTextVNode(" Master Suite Location "),
-                  createBaseVNode("div", _hoisted_13, [
+                  createBaseVNode("div", _hoisted_8, [
                     createVNode(_sfc_main$2, {
                       label: "Front",
                       modelValue: front.value,
-                      "onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => front.value = $event),
+                      "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => front.value = $event),
                       onClick: onClickFront
                     }, null, 8, ["modelValue"]),
                     createVNode(_sfc_main$2, {
                       label: "Back",
                       modelValue: back.value,
-                      "onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => back.value = $event),
+                      "onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => back.value = $event),
                       onClick: onClickBack
                     }, null, 8, ["modelValue"])
                   ])
                 ])
               ])
             ])) : createCommentVNode("", true)
-          ], 2), [
-            [vShow, expanded.value]
-          ])
-        ]),
-        unref(floorplans).type === "LOADING" ? (openBlock(), createElementBlock("div", _hoisted_14, [
-          createBaseVNode("div", _hoisted_15, [
+          ]),
+          _: 1
+        }, 8, ["open", "toggle", "rounded", "shadow", "cardColor"]),
+        unref(floorplans).type === "LOADING" ? (openBlock(), createElementBlock("div", _hoisted_9, [
+          createBaseVNode("div", _hoisted_10, [
             createVNode(LoadingSpinner),
-            _hoisted_16
+            _hoisted_11
           ])
-        ])) : unref(floorplans).type === "SUCCESS" ? (openBlock(), createElementBlock("div", _hoisted_17, [
+        ])) : unref(floorplans).type === "SUCCESS" ? (openBlock(), createElementBlock("div", _hoisted_12, [
           (openBlock(true), createElementBlock(Fragment, null, renderList(unref(floorplans).data, (item) => {
             return openBlock(), createBlock(FloorplanCard, {
               key: item.name,
               item,
-              rounded: _ctx.rounded
-            }, null, 8, ["item", "rounded"]);
+              rounded: _ctx.rounded,
+              shadow: selectedShadow.value,
+              cardColor: _ctx.cardColor,
+              transparent: transparentCard
+            }, null, 8, ["item", "rounded", "shadow", "cardColor"]);
           }), 128))
-        ])) : unref(floorplans).type === "ERROR" ? (openBlock(), createElementBlock("div", _hoisted_18, toDisplayString(unref(floorplans).error.message), 1)) : (openBlock(), createElementBlock("div", _hoisted_19, "No floorplans found"))
+        ])) : unref(floorplans).type === "ERROR" ? (openBlock(), createElementBlock("div", _hoisted_13, toDisplayString(unref(floorplans).error.message), 1)) : (openBlock(), createElementBlock("div", _hoisted_14, "No floorplans found"))
       ]);
     };
   }
 });
 
-const _style_0 = "/*\n! tailwindcss v3.4.3 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n7. Disable tap highlights on iOS\n*/\nhtml,\n:host {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n  -webkit-tap-highlight-color: transparent; /* 7 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font-family by default.\n2. Use the user's configured `mono` font-feature-settings by default.\n3. Use the user's configured `mono` font-variation-settings by default.\n4. Correct the odd `em` font sizing in all browsers.\n*/\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-feature-settings: normal; /* 2 */\n  font-variation-settings: normal; /* 3 */\n  font-size: 1em; /* 4 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\nsub {\n  bottom: -0.25em;\n}\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  letter-spacing: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\nbutton,\ninput:where([type='button']),\ninput:where([type='reset']),\ninput:where([type='submit']) {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\nfieldset {\n  margin: 0;\n  padding: 0;\n}\nlegend {\n  padding: 0;\n}\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n.container {\n  width: 100%;\n}\n@media (min-width: 640px) {\n.container {\n    max-width: 640px;\n}\n}\n@media (min-width: 768px) {\n.container {\n    max-width: 768px;\n}\n}\n@media (min-width: 1024px) {\n.container {\n    max-width: 1024px;\n}\n}\n@media (min-width: 1280px) {\n.container {\n    max-width: 1280px;\n}\n}\n@media (min-width: 1536px) {\n.container {\n    max-width: 1536px;\n}\n}\n.sr-only {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border-width: 0;\n}\n.pointer-events-none {\n  pointer-events: none;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.inset-0 {\n  inset: 0px;\n}\n.inset-y-0 {\n  top: 0px;\n  bottom: 0px;\n}\n.end-0 {\n  inset-inline-end: 0px;\n}\n.right-0 {\n  right: 0px;\n}\n.right-5 {\n  right: 1.25rem;\n}\n.start-0 {\n  inset-inline-start: 0px;\n}\n.top-0 {\n  top: 0px;\n}\n.z-10 {\n  z-index: 10;\n}\n.z-30 {\n  z-index: 30;\n}\n.m-4 {\n  margin: 1rem;\n}\n.m-5 {\n  margin: 1.25rem;\n}\n.mx-4 {\n  margin-left: 1rem;\n  margin-right: 1rem;\n}\n.mx-5 {\n  margin-left: 1.25rem;\n  margin-right: 1.25rem;\n}\n.mx-auto {\n  margin-left: auto;\n  margin-right: auto;\n}\n.mb-0 {\n  margin-bottom: 0px;\n}\n.mb-3 {\n  margin-bottom: 0.75rem;\n}\n.ml-3 {\n  margin-left: 0.75rem;\n}\n.mr-1 {\n  margin-right: 0.25rem;\n}\n.mt-1 {\n  margin-top: 0.25rem;\n}\n.mt-2 {\n  margin-top: 0.5rem;\n}\n.mt-3 {\n  margin-top: 0.75rem;\n}\n.mt-4 {\n  margin-top: 1rem;\n}\n.mt-5 {\n  margin-top: 1.25rem;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.grid {\n  display: grid;\n}\n.hidden {\n  display: none;\n}\n.h-10 {\n  height: 2.5rem;\n}\n.h-2 {\n  height: 0.5rem;\n}\n.h-4 {\n  height: 1rem;\n}\n.h-5 {\n  height: 1.25rem;\n}\n.h-60 {\n  height: 15rem;\n}\n.h-8 {\n  height: 2rem;\n}\n.h-96 {\n  height: 24rem;\n}\n.h-full {\n  height: 100%;\n}\n.max-h-56 {\n  max-height: 14rem;\n}\n.min-h-full {\n  min-height: 100%;\n}\n.w-10 {\n  width: 2.5rem;\n}\n.w-2 {\n  width: 0.5rem;\n}\n.w-4 {\n  width: 1rem;\n}\n.w-5 {\n  width: 1.25rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.w-screen {\n  width: 100vw;\n}\n.max-w-sm {\n  max-width: 24rem;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.transform {\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@keyframes spin {\nto {\n    transform: rotate(360deg);\n}\n}\n.animate-spin {\n  animation: spin 1s linear infinite;\n}\n.cursor-default {\n  cursor: default;\n}\n.cursor-pointer {\n  cursor: pointer;\n}\n.cursor-text {\n  cursor: text;\n}\n.select-none {\n  -webkit-user-select: none;\n     -moz-user-select: none;\n          user-select: none;\n}\n.appearance-none {\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n}\n.grid-cols-1 {\n  grid-template-columns: repeat(1, minmax(0, 1fr));\n}\n.grid-cols-2 {\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.items-end {\n  align-items: flex-end;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.justify-between {\n  justify-content: space-between;\n}\n.justify-around {\n  justify-content: space-around;\n}\n.justify-items-center {\n  justify-items: center;\n}\n.gap-2 {\n  gap: 0.5rem;\n}\n.gap-4 {\n  gap: 1rem;\n}\n.gap-8 {\n  gap: 2rem;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.overflow-auto {\n  overflow: auto;\n}\n.overflow-y-auto {\n  overflow-y: auto;\n}\n.truncate {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.rounded {\n  border-radius: 0.25rem;\n}\n.rounded-2xl {\n  border-radius: 1rem;\n}\n.rounded-3xl {\n  border-radius: 1.5rem;\n}\n.rounded-full {\n  border-radius: 9999px;\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-sm {\n  border-radius: 0.125rem;\n}\n.rounded-xl {\n  border-radius: 0.75rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-2 {\n  border-width: 2px;\n}\n.border-b {\n  border-bottom-width: 1px;\n}\n.border-t {\n  border-top-width: 1px;\n}\n.border-solid {\n  border-style: solid;\n}\n.border-blue-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity));\n}\n.border-gray-200 {\n  --tw-border-opacity: 1;\n  border-color: rgb(229 231 235 / var(--tw-border-opacity));\n}\n.border-slate-100 {\n  --tw-border-opacity: 1;\n  border-color: rgb(241 245 249 / var(--tw-border-opacity));\n}\n.bg-gray-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(229 231 235 / var(--tw-bg-opacity));\n}\n.bg-gray-400 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(156 163 175 / var(--tw-bg-opacity));\n}\n.bg-gray-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(107 114 128 / var(--tw-bg-opacity));\n}\n.bg-gray-800 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n}\n.bg-sky-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(186 230 253 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.bg-white\\/30 {\n  background-color: rgb(255 255 255 / 0.3);\n}\n.bg-opacity-75 {\n  --tw-bg-opacity: 0.75;\n}\n.fill-sky-500 {\n  fill: #0ea5e9;\n}\n.object-cover {\n  -o-object-fit: cover;\n     object-fit: cover;\n}\n.p-2 {\n  padding: 0.5rem;\n}\n.p-2\\.5 {\n  padding: 0.625rem;\n}\n.p-3 {\n  padding: 0.75rem;\n}\n.p-4 {\n  padding: 1rem;\n}\n.p-5 {\n  padding: 1.25rem;\n}\n.px-4 {\n  padding-left: 1rem;\n  padding-right: 1rem;\n}\n.py-1 {\n  padding-top: 0.25rem;\n  padding-bottom: 0.25rem;\n}\n.py-2 {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.py-5 {\n  padding-top: 1.25rem;\n  padding-bottom: 1.25rem;\n}\n.pl-3 {\n  padding-left: 0.75rem;\n}\n.pl-5 {\n  padding-left: 1.25rem;\n}\n.pr-10 {\n  padding-right: 2.5rem;\n}\n.pr-2 {\n  padding-right: 0.5rem;\n}\n.pr-5 {\n  padding-right: 1.25rem;\n}\n.pr-9 {\n  padding-right: 2.25rem;\n}\n.pt-1 {\n  padding-top: 0.25rem;\n}\n.text-left {\n  text-align: left;\n}\n.text-center {\n  text-align: center;\n}\n.text-2xl {\n  font-size: 1.5rem;\n  line-height: 2rem;\n}\n.text-base {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.text-lg {\n  font-size: 1.125rem;\n  line-height: 1.75rem;\n}\n.text-sm {\n  font-size: 0.875rem;\n  line-height: 1.25rem;\n}\n.text-xl {\n  font-size: 1.25rem;\n  line-height: 1.75rem;\n}\n.font-bold {\n  font-weight: 700;\n}\n.font-medium {\n  font-weight: 500;\n}\n.font-normal {\n  font-weight: 400;\n}\n.font-semibold {\n  font-weight: 600;\n}\n.leading-6 {\n  line-height: 1.5rem;\n}\n.text-black {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity));\n}\n.text-gray-200 {\n  --tw-text-opacity: 1;\n  color: rgb(229 231 235 / var(--tw-text-opacity));\n}\n.text-gray-400 {\n  --tw-text-opacity: 1;\n  color: rgb(156 163 175 / var(--tw-text-opacity));\n}\n.text-gray-900 {\n  --tw-text-opacity: 1;\n  color: rgb(17 24 39 / var(--tw-text-opacity));\n}\n.text-white {\n  --tw-text-opacity: 1;\n  color: rgb(255 255 255 / var(--tw-text-opacity));\n}\n.antialiased {\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n.shadow {\n  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-lg {\n  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-md {\n  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-xl {\n  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.ring-1 {\n  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);\n  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);\n  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);\n}\n.ring-inset {\n  --tw-ring-inset: inset;\n}\n.ring-black {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(0 0 0 / var(--tw-ring-opacity));\n}\n.ring-gray-400 {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(156 163 175 / var(--tw-ring-opacity));\n}\n.ring-opacity-5 {\n  --tw-ring-opacity: 0.05;\n}\n.grayscale {\n  --tw-grayscale: grayscale(100%);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-all {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-colors {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-opacity {\n  transition-property: opacity;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-transform {\n  transition-property: transform;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.duration-200 {\n  transition-duration: 200ms;\n}\n.duration-300 {\n  transition-duration: 300ms;\n}\n.ease-in {\n  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);\n}\n.ease-in-out {\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n.main {\n  transition: color 0.5s, background-color 0.5s;\n  line-height: 1.6;\n  font-family: Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Fira Sans\", \"Droid Sans\", \"Helvetica Neue\", sans-serif;\n  font-size: 15px;\n  text-rendering: optimizeLegibility;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n.fade-enter-active,\n.fade-leave-active {\n  transition: opacity 0.3s ease-out;\n}\n.fade-enter-from,\n.fade-leave-to {\n  opacity: 0;\n}\n.fade-enter-to,\n.fade-leave-from {\n  opacity: 1;\n}\n.slide-enter-active,\n.slide-leave-active {\n  transition: transform 0.3s ease-out;\n}\n.slide-enter-from,\n.slide-leave-to {\n  transform: translateY(4px);\n}\n.slide-enter-to,\n.slide-leave-from {\n  transform: translateY(0);\n}\n*::-webkit-scrollbar {\n  background-color: #efefef;\n  width: 15px;\n}\r\n/* background of the scrollbar except button or resizer */\n*::-webkit-scrollbar-track {\n  background-color: #efefef;\n}\r\n/* scrollbar itself */\n*::-webkit-scrollbar-thumb {\n  background-color: #babac0;\n  border-radius: 16px;\n  border: 4px solid #efefef;\n}\r\n/* set button(top and bottom of the scrollbar) */\n*::-webkit-scrollbar-button {\n  display: none;\n}\n.checked\\:border-0:checked {\n  border-width: 0px;\n}\n.checked\\:bg-blue-800:checked {\n  --tw-bg-opacity: 1;\n  background-color: rgb(30 64 175 / var(--tw-bg-opacity));\n}\n.hover\\:bg-sky-100:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(224 242 254 / var(--tw-bg-opacity));\n}\n.hover\\:ring-gray-500:hover {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));\n}\n.hover\\:brightness-95:hover {\n  --tw-brightness: brightness(.95);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.focus\\:outline-none:focus {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.focus\\:ring-2:focus {\n  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);\n  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);\n  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);\n}\n.focus\\:ring-blue-100:focus {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(219 234 254 / var(--tw-ring-opacity));\n}\n.focus\\:ring-gray-500:focus {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));\n}\n.focus\\:ring-offset-0:focus {\n  --tw-ring-offset-width: 0px;\n}\n.group[open] .group-open\\:rotate-180 {\n  --tw-rotate: 180deg;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.group:hover .group-hover\\:bg-white\\/50 {\n  background-color: rgb(255 255 255 / 0.5);\n}\n.group:focus .group-focus\\:outline-none {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.group:focus .group-focus\\:ring-4 {\n  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);\n  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);\n  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);\n}\n.group:focus .group-focus\\:ring-white {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(255 255 255 / var(--tw-ring-opacity));\n}\n.peer:checked ~ .peer-checked\\:block {\n  display: block;\n}\n@media (min-width: 640px) {\n.sm\\:my-8 {\n    margin-top: 2rem;\n    margin-bottom: 2rem;\n}\n.sm\\:w-full {\n    width: 100%;\n}\n.sm\\:max-w-2xl {\n    max-width: 42rem;\n}\n.sm\\:grid-cols-1 {\n    grid-template-columns: repeat(1, minmax(0, 1fr));\n}\n.sm\\:grid-cols-2 {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.sm\\:grid-cols-3 {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.sm\\:items-center {\n    align-items: center;\n}\n.sm\\:p-0 {\n    padding: 0px;\n}\n.sm\\:text-sm {\n    font-size: 0.875rem;\n    line-height: 1.25rem;\n}\n.sm\\:leading-6 {\n    line-height: 1.5rem;\n}\n}\n@media (min-width: 768px) {\n.md\\:hidden {\n    display: none;\n}\n.md\\:h-96 {\n    height: 24rem;\n}\n.md\\:grid-cols-2 {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.md\\:grid-cols-3 {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.md\\:grid-cols-4 {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n}\n@media (min-width: 1024px) {\n.lg\\:grid-cols-4 {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.lg\\:grid-cols-5 {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n}\n.rtl\\:rotate-180:where([dir=\"rtl\"], [dir=\"rtl\"] *) {\n  --tw-rotate: 180deg;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@media (prefers-color-scheme: dark) {\n.dark\\:bg-gray-800\\/30 {\n    background-color: rgb(31 41 55 / 0.3);\n}\n.dark\\:text-gray-600 {\n    --tw-text-opacity: 1;\n    color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.dark\\:text-gray-800 {\n    --tw-text-opacity: 1;\n    color: rgb(31 41 55 / var(--tw-text-opacity));\n}\n.group:hover .dark\\:group-hover\\:bg-gray-800\\/60 {\n    background-color: rgb(31 41 55 / 0.6);\n}\n.group:focus .dark\\:group-focus\\:ring-gray-800\\/70 {\n    --tw-ring-color: rgb(31 41 55 / 0.7);\n}\n}";
+const _style_0 = "/*\n! tailwindcss v3.4.3 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n7. Disable tap highlights on iOS\n*/\nhtml,\n:host {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n  -webkit-tap-highlight-color: transparent; /* 7 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font-family by default.\n2. Use the user's configured `mono` font-feature-settings by default.\n3. Use the user's configured `mono` font-variation-settings by default.\n4. Correct the odd `em` font sizing in all browsers.\n*/\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-feature-settings: normal; /* 2 */\n  font-variation-settings: normal; /* 3 */\n  font-size: 1em; /* 4 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\nsub {\n  bottom: -0.25em;\n}\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  letter-spacing: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\nbutton,\ninput:where([type='button']),\ninput:where([type='reset']),\ninput:where([type='submit']) {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\nfieldset {\n  margin: 0;\n  padding: 0;\n}\nlegend {\n  padding: 0;\n}\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n.container {\n  width: 100%;\n}\n@media (min-width: 640px) {\n.container {\n    max-width: 640px;\n}\n}\n@media (min-width: 768px) {\n.container {\n    max-width: 768px;\n}\n}\n@media (min-width: 1024px) {\n.container {\n    max-width: 1024px;\n}\n}\n@media (min-width: 1280px) {\n.container {\n    max-width: 1280px;\n}\n}\n@media (min-width: 1536px) {\n.container {\n    max-width: 1536px;\n}\n}\n.sr-only {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border-width: 0;\n}\n.pointer-events-none {\n  pointer-events: none;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.inset-0 {\n  inset: 0px;\n}\n.inset-y-0 {\n  top: 0px;\n  bottom: 0px;\n}\n.-top-1 {\n  top: -0.25rem;\n}\n.-top-1\\.5 {\n  top: -0.375rem;\n}\n.end-0 {\n  inset-inline-end: 0px;\n}\n.left-0 {\n  left: 0px;\n}\n.right-0 {\n  right: 0px;\n}\n.right-5 {\n  right: 1.25rem;\n}\n.start-0 {\n  inset-inline-start: 0px;\n}\n.top-0 {\n  top: 0px;\n}\n.z-10 {\n  z-index: 10;\n}\n.z-30 {\n  z-index: 30;\n}\n.m-4 {\n  margin: 1rem;\n}\n.m-5 {\n  margin: 1.25rem;\n}\n.mx-4 {\n  margin-left: 1rem;\n  margin-right: 1rem;\n}\n.mx-5 {\n  margin-left: 1.25rem;\n  margin-right: 1.25rem;\n}\n.mx-auto {\n  margin-left: auto;\n  margin-right: auto;\n}\n.mb-0 {\n  margin-bottom: 0px;\n}\n.mb-3 {\n  margin-bottom: 0.75rem;\n}\n.ml-3 {\n  margin-left: 0.75rem;\n}\n.mr-1 {\n  margin-right: 0.25rem;\n}\n.mt-1 {\n  margin-top: 0.25rem;\n}\n.mt-2 {\n  margin-top: 0.5rem;\n}\n.mt-3 {\n  margin-top: 0.75rem;\n}\n.mt-4 {\n  margin-top: 1rem;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.grid {\n  display: grid;\n}\n.hidden {\n  display: none;\n}\n.h-10 {\n  height: 2.5rem;\n}\n.h-2 {\n  height: 0.5rem;\n}\n.h-4 {\n  height: 1rem;\n}\n.h-5 {\n  height: 1.25rem;\n}\n.h-6 {\n  height: 1.5rem;\n}\n.h-60 {\n  height: 15rem;\n}\n.h-8 {\n  height: 2rem;\n}\n.h-96 {\n  height: 24rem;\n}\n.h-full {\n  height: 100%;\n}\n.max-h-56 {\n  max-height: 14rem;\n}\n.min-h-full {\n  min-height: 100%;\n}\n.w-10 {\n  width: 2.5rem;\n}\n.w-2 {\n  width: 0.5rem;\n}\n.w-4 {\n  width: 1rem;\n}\n.w-5 {\n  width: 1.25rem;\n}\n.w-6 {\n  width: 1.5rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.w-screen {\n  width: 100vw;\n}\n.max-w-sm {\n  max-width: 24rem;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.transform {\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@keyframes spin {\nto {\n    transform: rotate(360deg);\n}\n}\n.animate-spin {\n  animation: spin 1s linear infinite;\n}\n.cursor-default {\n  cursor: default;\n}\n.cursor-pointer {\n  cursor: pointer;\n}\n.cursor-text {\n  cursor: text;\n}\n.select-none {\n  -webkit-user-select: none;\n     -moz-user-select: none;\n          user-select: none;\n}\n.appearance-none {\n  -webkit-appearance: none;\n     -moz-appearance: none;\n          appearance: none;\n}\n.grid-cols-1 {\n  grid-template-columns: repeat(1, minmax(0, 1fr));\n}\n.grid-cols-2 {\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.items-end {\n  align-items: flex-end;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.justify-between {\n  justify-content: space-between;\n}\n.justify-around {\n  justify-content: space-around;\n}\n.justify-items-center {\n  justify-items: center;\n}\n.gap-2 {\n  gap: 0.5rem;\n}\n.gap-4 {\n  gap: 1rem;\n}\n.gap-8 {\n  gap: 2rem;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.overflow-auto {\n  overflow: auto;\n}\n.\\!overflow-visible {\n  overflow: visible !important;\n}\n.overflow-y-auto {\n  overflow-y: auto;\n}\n.truncate {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.rounded {\n  border-radius: 0.25rem;\n}\n.rounded-2xl {\n  border-radius: 1rem;\n}\n.rounded-3xl {\n  border-radius: 1.5rem;\n}\n.rounded-\\[7px\\] {\n  border-radius: 7px;\n}\n.rounded-full {\n  border-radius: 9999px;\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-none {\n  border-radius: 0px;\n}\n.rounded-sm {\n  border-radius: 0.125rem;\n}\n.rounded-xl {\n  border-radius: 0.75rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-2 {\n  border-width: 2px;\n}\n.border-b {\n  border-bottom-width: 1px;\n}\n.border-t {\n  border-top-width: 1px;\n}\n.border-blue-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity));\n}\n.border-gray-200 {\n  --tw-border-opacity: 1;\n  border-color: rgb(229 231 235 / var(--tw-border-opacity));\n}\n.bg-gray-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(229 231 235 / var(--tw-bg-opacity));\n}\n.bg-gray-400 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(156 163 175 / var(--tw-bg-opacity));\n}\n.bg-gray-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(107 114 128 / var(--tw-bg-opacity));\n}\n.bg-gray-800 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n}\n.bg-sky-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(186 230 253 / var(--tw-bg-opacity));\n}\n.bg-transparent {\n  background-color: transparent;\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.bg-white\\/30 {\n  background-color: rgb(255 255 255 / 0.3);\n}\n.bg-opacity-75 {\n  --tw-bg-opacity: 0.75;\n}\n.fill-sky-500 {\n  fill: #0ea5e9;\n}\n.object-cover {\n  -o-object-fit: cover;\n     object-fit: cover;\n}\n.p-2 {\n  padding: 0.5rem;\n}\n.p-2\\.5 {\n  padding: 0.625rem;\n}\n.p-3 {\n  padding: 0.75rem;\n}\n.p-4 {\n  padding: 1rem;\n}\n.p-5 {\n  padding: 1.25rem;\n}\n.px-3 {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.px-4 {\n  padding-left: 1rem;\n  padding-right: 1rem;\n}\n.py-1 {\n  padding-top: 0.25rem;\n  padding-bottom: 0.25rem;\n}\n.py-2 {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.py-2\\.5 {\n  padding-top: 0.625rem;\n  padding-bottom: 0.625rem;\n}\n.py-4 {\n  padding-top: 1rem;\n  padding-bottom: 1rem;\n}\n.py-5 {\n  padding-top: 1.25rem;\n  padding-bottom: 1.25rem;\n}\n.pl-3 {\n  padding-left: 0.75rem;\n}\n.pl-5 {\n  padding-left: 1.25rem;\n}\n.pr-10 {\n  padding-right: 2.5rem;\n}\n.pr-2 {\n  padding-right: 0.5rem;\n}\n.pr-5 {\n  padding-right: 1.25rem;\n}\n.pr-9 {\n  padding-right: 2.25rem;\n}\n.text-left {\n  text-align: left;\n}\n.text-center {\n  text-align: center;\n}\n.font-sans {\n  font-family: ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\";\n}\n.text-2xl {\n  font-size: 1.5rem;\n  line-height: 2rem;\n}\n.text-\\[11px\\] {\n  font-size: 11px;\n}\n.text-base {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.text-lg {\n  font-size: 1.125rem;\n  line-height: 1.75rem;\n}\n.text-sm {\n  font-size: 0.875rem;\n  line-height: 1.25rem;\n}\n.text-xl {\n  font-size: 1.25rem;\n  line-height: 1.75rem;\n}\n.font-bold {\n  font-weight: 700;\n}\n.font-medium {\n  font-weight: 500;\n}\n.font-normal {\n  font-weight: 400;\n}\n.font-semibold {\n  font-weight: 600;\n}\n.leading-6 {\n  line-height: 1.5rem;\n}\n.leading-tight {\n  line-height: 1.25;\n}\n.text-black {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity));\n}\n.text-gray-200 {\n  --tw-text-opacity: 1;\n  color: rgb(229 231 235 / var(--tw-text-opacity));\n}\n.text-gray-400 {\n  --tw-text-opacity: 1;\n  color: rgb(156 163 175 / var(--tw-text-opacity));\n}\n.text-gray-500 {\n  --tw-text-opacity: 1;\n  color: rgb(107 114 128 / var(--tw-text-opacity));\n}\n.text-gray-900 {\n  --tw-text-opacity: 1;\n  color: rgb(17 24 39 / var(--tw-text-opacity));\n}\n.text-white {\n  --tw-text-opacity: 1;\n  color: rgb(255 255 255 / var(--tw-text-opacity));\n}\n.antialiased {\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n.shadow {\n  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-2xl {\n  --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);\n  --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-lg {\n  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-md {\n  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-none {\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.shadow-xl {\n  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);\n  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);\n}\n.outline {\n  outline-style: solid;\n}\n.outline-0 {\n  outline-width: 0px;\n}\n.ring-1 {\n  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);\n  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);\n  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);\n}\n.ring-inset {\n  --tw-ring-inset: inset;\n}\n.ring-black {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(0 0 0 / var(--tw-ring-opacity));\n}\n.ring-gray-400 {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(156 163 175 / var(--tw-ring-opacity));\n}\n.ring-opacity-5 {\n  --tw-ring-opacity: 0.05;\n}\n.grayscale {\n  --tw-grayscale: grayscale(100%);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-all {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-colors {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.transition-opacity {\n  transition-property: opacity;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.duration-200 {\n  transition-duration: 200ms;\n}\n.ease-in {\n  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);\n}\n.ease-in-out {\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n.main {\n  transition: color 0.5s, background-color 0.5s;\n  line-height: 1.6;\n  font-family: Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Fira Sans\", \"Droid Sans\", \"Helvetica Neue\", sans-serif;\n  font-size: 15px;\n  text-rendering: optimizeLegibility;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n.fade-enter-active,\n.fade-leave-active {\n  transition: opacity 0.3s ease-out;\n}\n.fade-enter-from,\n.fade-leave-to {\n  opacity: 0;\n}\n.fade-enter-to,\n.fade-leave-from {\n  opacity: 1;\n}\n.slide-enter-active,\n.slide-leave-active {\n  transition: transform 0.3s ease-out;\n}\n.slide-enter-from,\n.slide-leave-to {\n  transform: translateY(4px);\n}\n.slide-enter-to,\n.slide-leave-from {\n  transform: translateY(0);\n}\n*::-webkit-scrollbar {\n  background-color: #efefef;\n  width: 15px;\n}\r\n/* background of the scrollbar except button or resizer */\n*::-webkit-scrollbar-track {\n  background-color: #efefef;\n}\r\n/* scrollbar itself */\n*::-webkit-scrollbar-thumb {\n  background-color: #babac0;\n  border-radius: 16px;\n  border: 4px solid #efefef;\n}\r\n/* set button(top and bottom of the scrollbar) */\n*::-webkit-scrollbar-button {\n  display: none;\n}\n.before\\:pointer-events-none::before {\n  content: var(--tw-content);\n  pointer-events: none;\n}\n.before\\:mr-1::before {\n  content: var(--tw-content);\n  margin-right: 0.25rem;\n}\n.before\\:mt-\\[6\\.5px\\]::before {\n  content: var(--tw-content);\n  margin-top: 6.5px;\n}\n.before\\:box-border::before {\n  content: var(--tw-content);\n  box-sizing: border-box;\n}\n.before\\:block::before {\n  content: var(--tw-content);\n  display: block;\n}\n.before\\:h-1::before {\n  content: var(--tw-content);\n  height: 0.25rem;\n}\n.before\\:h-1\\.5::before {\n  content: var(--tw-content);\n  height: 0.375rem;\n}\n.before\\:w-2::before {\n  content: var(--tw-content);\n  width: 0.5rem;\n}\n.before\\:w-2\\.5::before {\n  content: var(--tw-content);\n  width: 0.625rem;\n}\n.before\\:rounded-tl-md::before {\n  content: var(--tw-content);\n  border-top-left-radius: 0.375rem;\n}\n.before\\:border-l::before {\n  content: var(--tw-content);\n  border-left-width: 1px;\n}\n.before\\:border-t::before {\n  content: var(--tw-content);\n  border-top-width: 1px;\n}\n.before\\:transition-all::before {\n  content: var(--tw-content);\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.after\\:pointer-events-none::after {\n  content: var(--tw-content);\n  pointer-events: none;\n}\n.after\\:ml-1::after {\n  content: var(--tw-content);\n  margin-left: 0.25rem;\n}\n.after\\:mt-\\[6\\.5px\\]::after {\n  content: var(--tw-content);\n  margin-top: 6.5px;\n}\n.after\\:box-border::after {\n  content: var(--tw-content);\n  box-sizing: border-box;\n}\n.after\\:block::after {\n  content: var(--tw-content);\n  display: block;\n}\n.after\\:h-1::after {\n  content: var(--tw-content);\n  height: 0.25rem;\n}\n.after\\:h-1\\.5::after {\n  content: var(--tw-content);\n  height: 0.375rem;\n}\n.after\\:w-2::after {\n  content: var(--tw-content);\n  width: 0.5rem;\n}\n.after\\:w-2\\.5::after {\n  content: var(--tw-content);\n  width: 0.625rem;\n}\n.after\\:flex-grow::after {\n  content: var(--tw-content);\n  flex-grow: 1;\n}\n.after\\:rounded-tr-md::after {\n  content: var(--tw-content);\n  border-top-right-radius: 0.375rem;\n}\n.after\\:border-r::after {\n  content: var(--tw-content);\n  border-right-width: 1px;\n}\n.after\\:border-t::after {\n  content: var(--tw-content);\n  border-top-width: 1px;\n}\n.after\\:transition-all::after {\n  content: var(--tw-content);\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.checked\\:border-0:checked {\n  border-width: 0px;\n}\n.checked\\:bg-blue-800:checked {\n  --tw-bg-opacity: 1;\n  background-color: rgb(30 64 175 / var(--tw-bg-opacity));\n}\n.placeholder-shown\\:border:-moz-placeholder-shown {\n  border-width: 1px;\n}\n.placeholder-shown\\:border:placeholder-shown {\n  border-width: 1px;\n}\n.hover\\:bg-sky-100:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(224 242 254 / var(--tw-bg-opacity));\n}\n.hover\\:ring-gray-500:hover {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));\n}\n.hover\\:brightness-95:hover {\n  --tw-brightness: brightness(.95);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.focus\\:border-2:focus {\n  border-width: 2px;\n}\n.focus\\:border-gray-900:focus {\n  --tw-border-opacity: 1;\n  border-color: rgb(17 24 39 / var(--tw-border-opacity));\n}\n.focus\\:border-t-transparent:focus {\n  border-top-color: transparent;\n}\n.focus\\:outline-none:focus {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.focus\\:outline-0:focus {\n  outline-width: 0px;\n}\n.focus\\:ring-2:focus {\n  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);\n  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);\n  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);\n}\n.focus\\:ring-blue-100:focus {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(219 234 254 / var(--tw-ring-opacity));\n}\n.focus\\:ring-gray-500:focus {\n  --tw-ring-opacity: 1;\n  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));\n}\n.focus\\:ring-offset-0:focus {\n  --tw-ring-offset-width: 0px;\n}\n.disabled\\:border-0:disabled {\n  border-width: 0px;\n}\n.group:hover .group-hover\\:bg-white\\/50 {\n  background-color: rgb(255 255 255 / 0.5);\n}\n.group:focus .group-focus\\:outline-none {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.peer:checked ~ .peer-checked\\:block {\n  display: block;\n}\n.peer:-moz-placeholder-shown ~ .peer-placeholder-shown\\:text-sm {\n  font-size: 0.875rem;\n  line-height: 1.25rem;\n}\n.peer:placeholder-shown ~ .peer-placeholder-shown\\:text-sm {\n  font-size: 0.875rem;\n  line-height: 1.25rem;\n}\n.peer:-moz-placeholder-shown ~ .peer-placeholder-shown\\:leading-\\[3\\.75\\] {\n  line-height: 3.75;\n}\n.peer:placeholder-shown ~ .peer-placeholder-shown\\:leading-\\[3\\.75\\] {\n  line-height: 3.75;\n}\n.peer:-moz-placeholder-shown ~ .peer-placeholder-shown\\:before\\:border-transparent::before {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n.peer:placeholder-shown ~ .peer-placeholder-shown\\:before\\:border-transparent::before {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n.peer:-moz-placeholder-shown ~ .peer-placeholder-shown\\:after\\:border-transparent::after {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n.peer:placeholder-shown ~ .peer-placeholder-shown\\:after\\:border-transparent::after {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n.peer:focus ~ .peer-focus\\:text-\\[11px\\] {\n  font-size: 11px;\n}\n.peer:focus ~ .peer-focus\\:leading-tight {\n  line-height: 1.25;\n}\n.peer:focus ~ .peer-focus\\:text-gray-900 {\n  --tw-text-opacity: 1;\n  color: rgb(17 24 39 / var(--tw-text-opacity));\n}\n.peer:focus ~ .peer-focus\\:before\\:border-l-2::before {\n  content: var(--tw-content);\n  border-left-width: 2px;\n}\n.peer:focus ~ .peer-focus\\:before\\:border-t-2::before {\n  content: var(--tw-content);\n  border-top-width: 2px;\n}\n.peer:focus ~ .peer-focus\\:before\\:\\!border-gray-900::before {\n  content: var(--tw-content);\n  --tw-border-opacity: 1 !important;\n  border-color: rgb(17 24 39 / var(--tw-border-opacity)) !important;\n}\n.peer:focus ~ .peer-focus\\:after\\:border-r-2::after {\n  content: var(--tw-content);\n  border-right-width: 2px;\n}\n.peer:focus ~ .peer-focus\\:after\\:border-t-2::after {\n  content: var(--tw-content);\n  border-top-width: 2px;\n}\n.peer:focus ~ .peer-focus\\:after\\:\\!border-gray-900::after {\n  content: var(--tw-content);\n  --tw-border-opacity: 1 !important;\n  border-color: rgb(17 24 39 / var(--tw-border-opacity)) !important;\n}\n.peer:disabled ~ .peer-disabled\\:text-transparent {\n  color: transparent;\n}\n.peer:disabled ~ .peer-disabled\\:before\\:border-transparent::before {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n.peer:disabled ~ .peer-disabled\\:after\\:border-transparent::after {\n  content: var(--tw-content);\n  border-color: transparent;\n}\n@media (min-width: 640px) {\n.sm\\:my-8 {\n    margin-top: 2rem;\n    margin-bottom: 2rem;\n}\n.sm\\:w-full {\n    width: 100%;\n}\n.sm\\:max-w-2xl {\n    max-width: 42rem;\n}\n.sm\\:grid-cols-1 {\n    grid-template-columns: repeat(1, minmax(0, 1fr));\n}\n.sm\\:grid-cols-2 {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.sm\\:grid-cols-3 {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.sm\\:items-center {\n    align-items: center;\n}\n.sm\\:p-0 {\n    padding: 0px;\n}\n.sm\\:text-sm {\n    font-size: 0.875rem;\n    line-height: 1.25rem;\n}\n.sm\\:leading-6 {\n    line-height: 1.5rem;\n}\n}\n@media (min-width: 768px) {\n.md\\:hidden {\n    display: none;\n}\n.md\\:h-96 {\n    height: 24rem;\n}\n.md\\:grid-cols-2 {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.md\\:grid-cols-3 {\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n}\n.md\\:grid-cols-4 {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n}\n@media (min-width: 1024px) {\n.lg\\:grid-cols-4 {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n}\n.lg\\:grid-cols-5 {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n}\n.rtl\\:rotate-180:where([dir=\"rtl\"], [dir=\"rtl\"] *) {\n  --tw-rotate: 180deg;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@media (prefers-color-scheme: dark) {\n.dark\\:bg-gray-800\\/30 {\n    background-color: rgb(31 41 55 / 0.3);\n}\n.dark\\:text-gray-600 {\n    --tw-text-opacity: 1;\n    color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.dark\\:text-gray-800 {\n    --tw-text-opacity: 1;\n    color: rgb(31 41 55 / var(--tw-text-opacity));\n}\n.group:hover .dark\\:group-hover\\:bg-gray-800\\/60 {\n    background-color: rgb(31 41 55 / 0.6);\n}\n}";
 
 const VueFloorplanList = /* @__PURE__ */ _export_sfc(_sfc_main, [["styles", [_style_0]]]);
 

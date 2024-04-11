@@ -1,29 +1,57 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import FloorplanCard from './FloorplanCard.vue'
 import { useFloorplans } from '../hooks/useFloorplans'
 import { useFloorplanTypes } from '../hooks/useFloorplanTypes'
+import FilterExpandable from './FilterExpandable.vue'
 import SelectField from './inputs/SelectField.vue'
 import TextField from './inputs/TextField.vue'
 import CheckBox from './inputs/CheckBox.vue'
 import LoadingSpinner from './misc/LoadingSpinner.vue'
 
 export interface Props {
-  test?: string
   rounded?: string
-  expandedDefault?: boolean
+  primaryColor?: string
+  cardColor?: string
+  shadow?: string
+  variant?: string
+  darkMode?: 'true' | 'false'
+  expandedDefault?: 'true' | 'false'
+  transparent?: 'true' | 'false'
+  // rounded?: string
+  // expandedDefault?: boolean
+  // dark: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   test: 'Default test value',
-  rounded: 'rounded-md',
-  expandedDefault: false
+  rounded: 'rounded',
+  shadow: 'shadow',
+  expandedDefault: 'false',
+  darkMode: 'false',
+  transparent: 'false'
 })
 
-// const props = defineProps<{
-//   test: string
-//   rounded?: string
-// }>()
+const roundedOptions = [
+  'rounded-none',
+  'rounded-sm',
+  'rounded',
+  'rounded-md',
+  'rounded-lg',
+  'rounded-xl',
+  'rounded-2xl',
+  'rounded-3xl'
+]
+const shadowOptions = ['shadow-none', 'shadow', 'shadow-md', 'shadow-lg', 'shadow-xl', 'shadow-2xl']
+
+const selectedRounded = computed(() => {
+  const value = roundedOptions.find((option) => option === props.rounded)
+  return value || 'rounded-md'
+})
+const selectedShadow = computed(() => {
+  const value = shadowOptions.find((option) => option === props.shadow)
+  return value || 'shadow-md'
+})
 
 console.log(props)
 
@@ -89,7 +117,6 @@ watch(
     masterPosRear
   ],
   () => {
-    console.log(masterPosRear.value)
     floorplanProps.value = {
       floorplanTypeId: type.value?.id,
       bedrooms: bedrooms.value || undefined,
@@ -123,80 +150,87 @@ const onClickBack = () => {
 const [floorplans] = useFloorplans(floorplanProps)
 const [floorplanTypes] = useFloorplanTypes()
 
-const expanded = ref(props.expandedDefault)
+const expanded = ref(props.expandedDefault === 'true')
+const transparentCard = props.transparent === 'true'
 </script>
 
 <template>
-  <div class="main container mx-auto mt-5">
-    <div class="relative mb-3 mx-4">
-      <h6 class="mb-0">
-        <div
-          class="relative flex items-center bg-white shadow-md w-full cursor-pointer hover:brightness-95 p-4 font-semibold text-left transition-all ease-in border-b border-solid border-slate-100 text-black group text-dark-500"
-          :class="rounded"
-          @click="expanded = !expanded"
-        >
-          <span>Filters</span>
-          <i
-            class="absolute right-0 pt-1 text-base transition-transform fa fa-chevron-down group-open:rotate-180"
-          ></i>
+  <div class="main container mx-auto">
+    <FilterExpandable
+      :open="expanded"
+      :toggle="() => (expanded = !expanded)"
+      :rounded="selectedRounded"
+      :shadow="selectedShadow"
+      :cardColor="props.cardColor"
+    >
+      <div v-if="floorplanTypes.type === 'SUCCESS'" class="mx-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <!-- <div>
+                <div class="relative w-full h-10">
+                  <input
+                    class="peer w-full h-full bg-transparent text-blue-gray-700 font-sans font-normal outline outline-0 focus:outline-0 disabled:bg-blue-gray-50 disabled:border-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 border focus:border-2 focus:border-t-transparent text-sm px-3 py-2.5 rounded-[7px] border-blue-gray-200 focus:border-gray-900"
+                    placeholder=" "
+                  />
+                  <label
+                    class="flex w-full h-full select-none pointer-events-none absolute left-0 font-normal !overflow-visible truncate peer-placeholder-shown:text-blue-gray-500 leading-tight peer-focus:leading-tight peer-disabled:text-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500 transition-all -top-1.5 peer-placeholder-shown:text-sm text-[11px] peer-focus:text-[11px] before:content[' '] before:block before:box-border before:w-2.5 before:h-1.5 before:mt-[6.5px] before:mr-1 peer-placeholder-shown:before:border-transparent before:rounded-tl-md before:border-t peer-focus:before:border-t-2 before:border-l peer-focus:before:border-l-2 before:pointer-events-none before:transition-all peer-disabled:before:border-transparent after:content[' '] after:block after:flex-grow after:box-border after:w-2.5 after:h-1.5 after:mt-[6.5px] after:ml-1 peer-placeholder-shown:after:border-transparent after:rounded-tr-md after:border-t peer-focus:after:border-t-2 after:border-r peer-focus:after:border-r-2 after:pointer-events-none after:transition-all peer-disabled:after:border-transparent peer-placeholder-shown:leading-[3.75] text-gray-500 peer-focus:text-gray-900 before:border-blue-gray-200 peer-focus:before:!border-gray-900 after:border-blue-gray-200 peer-focus:after:!border-gray-900"
+                  >
+                    Username
+                  </label>
+                </div>
+              </div> -->
+          <SelectField
+            label="Type"
+            :items="floorplanTypes.data"
+            @onChanged="(value: FloorplanType) => (type = value)"
+            :rounded="selectedRounded"
+          />
+          <TextField type="number" label="Bedrooms" v-model="bedrooms" :rounded="selectedRounded" />
+          <TextField
+            type="number"
+            label="Bathrooms"
+            v-model="bathrooms"
+            :rounded="selectedRounded"
+          />
+          <TextField type="number" label="Garages" v-model="garages" :rounded="selectedRounded" />
+          <SelectField
+            label="Sort by"
+            :items="orderByOptions"
+            @onChanged="(value: OrderBy) => (orderBy = value)"
+            :rounded="selectedRounded"
+          />
         </div>
-      </h6>
-      <div
-        v-show="expanded"
-        class="shadow-md py-5 bg-gray-200 transition-all duration-300 ease-in-out"
-        :class="rounded"
-      >
-        <div v-if="floorplanTypes.type === 'SUCCESS'" class="mx-4">
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <SelectField
-              label="Type"
-              :items="floorplanTypes.data"
-              @onChanged="(value: FloorplanType) => (type = value)"
-              :rounded="rounded"
-            />
-            <TextField type="number" label="Bedrooms" v-model="bedrooms" :rounded="rounded" />
-            <TextField type="number" label="Bathrooms" v-model="bathrooms" :rounded="rounded" />
-            <TextField type="number" label="Garages" v-model="garages" :rounded="rounded" />
-            <SelectField
-              label="Sort by"
-              :items="orderByOptions"
-              @onChanged="(value: OrderBy) => (orderBy = value)"
-              :rounded="rounded"
-            />
+        <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4">
+          <div>
+            {{ 'House size(m\u00B2)' }}
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <TextField type="number" label="Min" v-model="minSize" :rounded="selectedRounded" />
+              <TextField type="number" label="Max" v-model="maxSize" :rounded="selectedRounded" />
+            </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-8 mt-4">
-            <div>
-              {{ 'House size(m\u00B2)' }}
-              <div class="grid grid-cols-2 gap-2 mt-3">
-                <TextField type="number" label="Min" v-model="minSize" :rounded="rounded" />
-                <TextField type="number" label="Max" v-model="maxSize" :rounded="rounded" />
-              </div>
+          <div>
+            {{ 'House width(m\u00B2)' }}
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <TextField type="number" label="Min" v-model="minWidth" :rounded="selectedRounded" />
+              <TextField type="number" label="Max" v-model="maxWidth" :rounded="selectedRounded" />
             </div>
-            <div>
-              {{ 'House width(m\u00B2)' }}
-              <div class="grid grid-cols-2 gap-2 mt-3">
-                <TextField type="number" label="Min" v-model="minWidth" :rounded="rounded" />
-                <TextField type="number" label="Max" v-model="maxWidth" :rounded="rounded" />
-              </div>
+          </div>
+          <div>
+            {{ 'House length(m\u00B2)' }}
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <TextField type="number" label="Min" v-model="minLength" :rounded="selectedRounded" />
+              <TextField type="number" label="Max" v-model="maxLength" :rounded="selectedRounded" />
             </div>
-            <div>
-              {{ 'House length(m\u00B2)' }}
-              <div class="grid grid-cols-2 gap-2 mt-3">
-                <TextField type="number" label="Min" v-model="minLength" :rounded="rounded" />
-                <TextField type="number" label="Max" v-model="maxLength" :rounded="rounded" />
-              </div>
-            </div>
-            <div>
-              Master Suite Location
-              <div class="flex gap-4 mt-3">
-                <CheckBox label="Front" v-model="front" :onClick="onClickFront" />
-                <CheckBox label="Back" v-model="back" :onClick="onClickBack" />
-              </div>
+          </div>
+          <div>
+            Master Suite Location
+            <div class="flex gap-4 mt-3">
+              <CheckBox label="Front" v-model="front" :onClick="onClickFront" />
+              <CheckBox label="Back" v-model="back" :onClick="onClickBack" />
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </FilterExpandable>
 
     <div v-if="floorplans.type === 'LOADING'" class="flex items-center justify-center">
       <div role="status">
@@ -213,6 +247,9 @@ const expanded = ref(props.expandedDefault)
         :key="item.name"
         :item="item"
         :rounded="rounded"
+        :shadow="selectedShadow"
+        :cardColor="cardColor"
+        :transparent="transparentCard"
       />
     </div>
     <div v-else-if="floorplans.type === 'ERROR'">{{ floorplans.error.message }}</div>
@@ -222,6 +259,7 @@ const expanded = ref(props.expandedDefault)
 
 <style lang="scss">
 @import url('../index.css');
+
 .main {
   transition:
     color 0.5s,

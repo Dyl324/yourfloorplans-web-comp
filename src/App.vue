@@ -27,7 +27,7 @@ interface RoundedValue {
         :rounded="rounded"
       />
 
-      <FloorplanList :test="'this is a test'" :rounded="rounded" :expandedDefault="false" />
+      <FloorplanList :rounded="rounded" transparent="true" shadow="shadow-none" />
     </div>
   </div>
 </template>
